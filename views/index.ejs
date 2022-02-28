@@ -75,11 +75,13 @@
       </form>
     </div>
     <div id="frm3"> 
-      <form id='form2' action="/chatting_page">
+      <form id='form2'>
         <br>
         <h1 style="position:absolute;left:10%;color:red; margin-left: 17%;"><%- username %></h1>
         <br>
-        <input id='inp' autocomplete="off" autofocus="on" type="text" placeholder="Type the username of the contact" /><button id="btn1">add contact</button>
+        <input name="tag" id='tag' autocomplete="off" autofocus="on" type="text" placeholder="Type the tagname of the contact" />
+        <input name="em" id='em' autocomplete="off" type="text" placeholder="Type the email" />
+        <button id="btn1">add contact</button>
       </form>
     </div>
    
@@ -119,12 +121,13 @@
             var privatecht = false;
             $('#form2').submit(function(e){
               e.preventDefault();
-              socket.emit('add_contact', $('#inp').val());
-              $('#inp').val='';
+              socket.emit('add_contact', $('#em').val());
+              $('#em').val='';
             });
             $('#form1').submit(function(e){
                 e.preventDefault(); 
-                socket.emit('chat_message', $('#txt').val());
+                
+                socket.emit('chat_message', $('#txt').val(),cur_usr);
                 $('#txt').val('');
                 return false;
             });
@@ -144,7 +147,7 @@
               prv = elm;
               elm.style.backgroundColor = 'bisque';
               privatecht =true;
-              socket.emit('private_chat',username);
+              socket.emit('private_chat',username,cur_usr);
             }
             socket.on('chat_message', function(msg,username){
               var usr = "";

@@ -14,6 +14,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
 
 var current_user = '';
+var current_user_email = '';
 var usernm = "";
 
 app.set('view engine', 'ejs');
@@ -29,13 +30,16 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
     password: String,
     googleId: String,
-    contactList: String
+    contactList: Array,
+    blokcedContacts: Array,
+    groups: Array
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -62,6 +66,7 @@ passport.use(new GoogleStrategy({
     },
     function(accessToken, refreshToken, profile, cb) {
         current_user = profile.name.givenName;
+        current_user_email = profile.name.givenName;
         User.findOrCreate({ googleId: profile.id }, function (err, user) {
         return cb(err, user);
         });
@@ -104,8 +109,10 @@ app.get('/chatting_page', function (req, res) {
         usrnme+=current_user[i];
     }
     if (req.isAuthenticated()) {
-        var t = User.find({'username': current_user}, function(err,users){
-            res.render('index.ejs', {username: current_user});
+        var t = User.find({'username': current_user_email}, function(err,users){
+            if (!err) {
+                res.render('index.ejs', {username: current_user});
+            }
         })
     } else {
         res.redirect('/login');
@@ -121,8 +128,7 @@ app.get('/logout', function (req, res) {
 var userlist = [];
 var users = [];
 var private_chat=false;
-var receiver = "";
-var socketId="";
+var msglist = [];
 io.on('connection', function(socket) {
     
     socket.on('username', function(username) {
@@ -147,15 +153,19 @@ io.on('connection', function(socket) {
         io.emit('update_userlist',users);
         io.emit('is_online', '🔴 <i>' + socket.username + ' left the chat..</i>');
     });
-    socket.on('private_chat', (username)=>{
-        socketId = userlist[username];
+    socket.on('private_chat', (receiver,sender)=>{
+        msglist[sender] = receiver;
+        // receiver_socketId = userlist[receiver];
+        // sender_socketId = userlist[sender];
+        console.log(receiver,sender)
         private_chat=true;
-    })
-    socket.on('chat_message', function(message) {
+    });
+    socket.on('chat_message', function(message,cur_usr) {
         if (!message==''){
             if (private_chat){
-                io.to(socketId).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
-                io.to(userlist[socket.username]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
+                io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
+                // io.to(userlist[socket.username]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
             }
             else if (!private_chat){
                 io.emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
@@ -164,10 +174,17 @@ io.on('connection', function(socket) {
     });
     socket.on('add_contact', function(contact){
         var arr=[];
-        
-        User.updateOne({username: current_user},{contactList: contact});
-        User.find({'username':current_user}, (err,user)=>{
-            console.log(user)
+        // console.log(contact);
+        // User.updateOne({username: contact},{'$push': {contactList: {"email": "newly_added"}}});
+        console.log(current_user_email);
+        User.findOne({'username':current_user_email}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    user.contactList = [...user.contactList, {"email": contact}];
+                    user.save();
+                    console.log(user.contactList);
+                }
+            }
         })
     });
 });
@@ -183,6 +200,7 @@ app.post('/register', function (req, res) {
         } else {
             passport.authenticate("local")(req, res, function () {
                 current_user = username;
+                current_user_email = username
                 res.redirect('/chatting_page');
             })
         }
@@ -203,7 +221,7 @@ app.post('/login', function (req, res) {
             console.log(err);
         } else {
             current_user = username;
-            
+            current_user_email = username;            
             passport.authenticate('local')(req, res, function () {
                 // var t = User.find({'username': username}, function(err,users){
                 //     console.log(users[0].contactList);
@@ -215,6 +233,12 @@ app.post('/login', function (req, res) {
         }
     })
 });
+
+// app.post('/chatting_page', function (req, res) {
+//     // var tagname = req.body.tag;
+//     var email = req.body.em;
+//     console.log(tagname, email);
+// })
 
 var port = process.env.PORT || 3000;
 http.listen(port, function () {
