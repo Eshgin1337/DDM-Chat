@@ -30,8 +30,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
-mongoose.connect('mongodb://localhost:27017/usersDB');
+mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+// mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
