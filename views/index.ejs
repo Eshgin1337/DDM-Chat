@@ -81,7 +81,7 @@
         <br>
         <input name="tag" id='tag' autocomplete="off" autofocus="on" type="text" placeholder="Type the tagname of the contact" />
         <input name="em" id='em' autocomplete="off" type="text" placeholder="Type the email" />
-        <button id="btn1">add contact</button>
+        <button id="btn1" onclick="addContact()">add contact</button>
       </form>
     </div>
    
@@ -119,15 +119,15 @@
             var parser = new DOMParser();
             var prvelm;
             var privatecht = false;
+            var cur_email="";
             $('#form2').submit(function(e){
               e.preventDefault();
-              socket.emit('add_contact', $('#em').val());
-              $('#em').val='';
+              $('#em').val('');
             });
             $('#form1').submit(function(e){
                 e.preventDefault(); 
                 
-                socket.emit('chat_message', $('#txt').val(),cur_usr);
+                socket.emit('chat_message', $('#txt').val(),cur_email);
                 $('#txt').val('');
                 return false;
             });
@@ -135,11 +135,20 @@
               var html='';
               data.forEach(element => {
                 if (cur_usr!=element){
-                  html+='<li onclick="onuserselect(this.innerHTML,this)">'+element+'</li>';
+                  html+='<li onclick="onuserselect(this.innerHTML,this)">'+element.email+'</li>';
                 }
               });
               document.getElementById('users').innerHTML = html;
             });
+            function addContact(){
+              if ($("#em").val()==cur_email){
+                $("#messages").append($('<li style="color:black;border:solid black 2px;">').html('Cannot add yourself to contactlist!'));
+                $('#messages').append($('<li>').html(""));
+              }
+              else{
+                socket.emit('add_contact', $('#em').val(),cur_email);
+              }
+            }
             function onuserselect(username,elm){
               if (privatecht){
                 prv.style.backgroundColor = 'greenyellow';
@@ -147,7 +156,8 @@
               prv = elm;
               elm.style.backgroundColor = 'bisque';
               privatecht =true;
-              socket.emit('private_chat',username,cur_usr);
+              // console.log(username,cur_email);
+              socket.emit('private_chat',username,cur_email);
             }
             socket.on('chat_message', function(msg,username){
               var usr = "";
@@ -175,13 +185,12 @@
                window.scrollBy(0,1000000000);
                num_of_msg+=1;
             });
-            socket.on('is_online', function(msg,username) {
+            socket.on('is_online', function(username,cur_em) {
               if (chaecker==false){
+                cur_email = cur_em;
                 cur_usr = username;
                 chaecker=true;
               }
-              
-                $('#messages').append($('<li>').html(msg));
             });
 
             if (window.performance.navigation.type== window.performance.navigation.TYPE_RELOAD){

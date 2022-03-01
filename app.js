@@ -129,10 +129,14 @@ var userlist = [];
 var users = [];
 var private_chat=false;
 var msglist = [];
+var users_with_contacts = [];
 io.on('connection', function(socket) {
     
     socket.on('username', function(username) {
         var usrnme="";
+        var cur_em="";
+        cur_em += current_user;
+        userlist[current_user_email] = socket.id;
         for (var i=0;i<current_user.length;i++){
             if (current_user[i]=="@"){
                 current_user=usrnme;
@@ -142,50 +146,91 @@ io.on('connection', function(socket) {
         }
         socket.username = current_user;
         usernm = current_user;
-        userlist[socket.username] = socket.id;
-        users.push(socket.username);
-        io.emit('is_online', '🔵 <i>' + socket.username + ' join the chat..</i>',socket.username);
-        io.emit('update_userlist',users);
+        io.emit('is_online', socket.username,current_user_email);
+        User.findOne({'username':current_user_email}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    users = [...user.contactList];
+                    io.to(userlist[current_user_email]).emit('update_userlist',users);
+                }
+            }
+        })
     });
     socket.on('disconnect', function(username) {
-        users.pop(socket.username);
-        userlist.pop(socket.username);
-        io.emit('update_userlist',users);
         io.emit('is_online', '🔴 <i>' + socket.username + ' left the chat..</i>');
     });
     socket.on('private_chat', (receiver,sender)=>{
         msglist[sender] = receiver;
-        // receiver_socketId = userlist[receiver];
-        // sender_socketId = userlist[sender];
-        console.log(receiver,sender)
+        // console.log(receiver,sender)
         private_chat=true;
     });
     socket.on('chat_message', function(message,cur_usr) {
         if (!message==''){
-            if (private_chat){
+            if (private_chat && userlist[msglist[cur_usr]]){
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
                 io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
-                // io.to(userlist[socket.username]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
             }
-            else if (!private_chat){
-                io.emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
+            else if (!private_chat || !userlist[msglist[cur_usr]]){
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend to send a message!</strong>',socket.username);
             }
         }
     });
-    socket.on('add_contact', function(contact){
-        var arr=[];
-        // console.log(contact);
-        // User.updateOne({username: contact},{'$push': {contactList: {"email": "newly_added"}}});
-        console.log(current_user_email);
-        User.findOne({'username':current_user_email}, (err,user)=>{
-            if (!err) {
-                if (user) {
-                    user.contactList = [...user.contactList, {"email": contact}];
-                    user.save();
-                    console.log(user.contactList);
+    socket.on('add_contact', function(contact,cur_email){
+        var exists = false;
+        var alreadyhavethatcontact=false;
+        User.findOne({'username':contact}, (err,user)=>{
+            if (!err){
+                if (user){
+                    exists=true;
                 }
             }
-        })
+        });
+        User.findOne({'username':cur_email}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    
+                    if (exists){
+                        user.contactList = [...user.contactList];
+                        user.contactList.forEach(element => {
+                            if (element.email==contact){
+                                alreadyhavethatcontact=true;
+                            
+                            }
+                        });
+                        if (!alreadyhavethatcontact){
+                            user.contactList = [...user.contactList, {"email": contact}];
+                            user.save();
+                            // users_with_contacts[cur_email].push(contact);
+                            users = user.contactList;
+                            // users.push(socket.username);
+                            io.to(userlist[cur_email]).emit('update_userlist',users);
+                        }
+                        else{
+                            io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:lightblue">Already have that contact!</strong>',socket.username);
+                        }
+                    }
+                    else{
+                        io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:orange">Such user doesnt exist!</strong>',socket.username);
+                    }
+                    // console.log(user.contactList,userlist);
+                }
+            }
+        });
+        User.findOne({'username':contact}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    if (exists && !alreadyhavethatcontact){
+                        user.contactList = [...user.contactList, {"email": cur_email}];
+                        user.save();
+                        // users_with_contacts[contact].push(cur_email);
+                        users = user.contactList;
+                        // users.push(socket.username);
+                        io.to(userlist[contact]).emit('update_userlist',users);
+                    }
+                    // console.log(user.contactList,userlist);
+                }
+            }
+        });
     });
 });
 
@@ -223,9 +268,6 @@ app.post('/login', function (req, res) {
             current_user = username;
             current_user_email = username;            
             passport.authenticate('local')(req, res, function () {
-                // var t = User.find({'username': username}, function(err,users){
-                //     console.log(users[0].contactList);
-                // });
                 
                 res.redirect("/chatting_page");
                 
