@@ -42,6 +42,8 @@ const userSchema = new mongoose.Schema({
     groups: Array
 });
 
+
+
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
 
@@ -72,6 +74,7 @@ passport.use(new GoogleStrategy({
         });
     }
 ));
+
 app.get('/', function (req, res) {
     res.render('home');
 });
@@ -87,11 +90,15 @@ app.get('/auth/google/chatting_page',
   });
 
 app.get('/register', function (req, res) {
-    res.render('register');
+    res.render('register',{err_message:""});
 });
 
 app.get('/login', function (req, res) {
-    res.render('login');
+    res.render('login',{err_message:""});
+});
+
+app.get('/about', function(req,res){
+    res.render('about');
 });
 
 app.get('/submit', function (req, res) {
@@ -108,15 +115,8 @@ app.get('/chatting_page', function (req, res) {
         }
         usrnme+=current_user[i];
     }
-    if (req.isAuthenticated()) {
-        var t = User.find({'username': current_user_email}, function(err,users){
-            if (!err) {
-                res.render('index.ejs', {username: current_user});
-            }
-        })
-    } else {
-        res.redirect('/login');
-    }
+    
+    res.render('index.ejs', {username: current_user});
 });
 
 app.get('/logout', function (req, res) {
@@ -157,6 +157,10 @@ io.on('connection', function(socket) {
         })
     });
     socket.on('disconnect', function(username) {
+        var removeStr = [current_user_email]
+        userlist = userlist.filter(function(val){
+            return (removeStr.indexOf(val) == -1 ? true : false)
+          });
         io.emit('is_online', '🔴 <i>' + socket.username + ' left the chat..</i>');
     });
     socket.on('private_chat', (receiver,sender)=>{
@@ -170,8 +174,11 @@ io.on('connection', function(socket) {
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
                 io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
             }
-            else if (!private_chat || !userlist[msglist[cur_usr]]){
+            else if (!private_chat && userlist[msglist[cur_usr]] || !private_chat){
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend to send a message!</strong>',socket.username);
+            }
+            else if (private_chat && !userlist[msglist[cur_usr]]){
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">User is not online yet!</strong>',socket.username);
             }
         }
     });
@@ -237,19 +244,24 @@ io.on('connection', function(socket) {
 app.post('/register', function (req, res) {
     const username = req.body.username;
     const password = req.body.password;
-
-    User.register({username: username}, password, function (err, user) {
-        if (err) { 
-            console.log(err);
-            res.redirect('/register');
-        } else {
-            passport.authenticate("local")(req, res, function () {
-                current_user = username;
-                current_user_email = username
-                res.redirect('/chatting_page');
-            })
-        }
-    })
+    if(password.length<8){
+        res.render('register', {err_message:"Password cannot be less than 8 characters!"});
+    }
+    else{
+        User.register({username: username}, password, function (err, user) {
+            if (err) { 
+                console.log(err);
+                res.render('register', {err_message:"Invalid Register, such user already exists!"});
+            }
+            else {
+                passport.authenticate("local")(req, res, function () {
+                    current_user = username;
+                    current_user_email = username
+                    res.redirect('/chatting_page');
+                })
+            }
+        })
+    }
 });
 
 app.post('/login', function (req, res) {
@@ -262,25 +274,27 @@ app.post('/login', function (req, res) {
     });
 
     req.login(user, function (err) {
+        
         if (err) {
             console.log(err);
         } else {
             current_user = username;
             current_user_email = username;            
-            passport.authenticate('local')(req, res, function () {
-                
-                res.redirect("/chatting_page");
-                
-            });
+            passport.authenticate('local',function (err,user) {
+                if (!user){
+                    res.render('login',{err_message:"Invalid Login credentials!"});
+                }
+                else if (userlist[current_user_email]){
+                    res.render('login',{err_message:"This user is already logged in!"});
+                }
+                else{
+                    res.redirect('/chatting_page');
+                }
+            })(req, res);
         }
     })
 });
 
-// app.post('/chatting_page', function (req, res) {
-//     // var tagname = req.body.tag;
-//     var email = req.body.em;
-//     console.log(tagname, email);
-// })
 
 var port = process.env.PORT || 3000;
 http.listen(port, function () {

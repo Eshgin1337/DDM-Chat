@@ -1,5 +1,5 @@
 {
-  "name": "SemesterProjectWebsite",
+  "name": "semesterprojectwebsite",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -21,7 +21,7 @@
     "express": "^4.17.3",
     "express-session": "^1.17.2",
     "md5": "^2.3.0",
-    "mongoose": "^6.2.3",
+    "mongoose": "^6.2.4",
     "mongoose-encryption": "^2.1.2",
     "mongoose-findorcreate": "^3.0.0",
     "nodemon": "^2.0.15",

@@ -1,5 +1,15 @@
 <%- include('partials/header') %>
-
+<nav id="nv">
+  <a href="/"><strong>Home</strong></a>
+  
+  <a href="/about"><strong>About</strong></a>
+<a href="/register"><strong>Register</strong></a>
+</nav>
+<% if(err_message!=""){ %>
+  <div class="alert alert-danger">
+    <strong><%- err_message %></strong> 
+  </div>
+<% } %>
 <div class="container mt-5">
   <h1>Login</h1>
 
@@ -7,7 +17,7 @@
     <div class="col-sm-8">
       <div class="card">
         <div class="card-body">
-
+          
           <!-- Makes POST request to /login route -->
           <form action="/login" method="POST">
             <div class="form-group">
@@ -19,8 +29,6 @@
               <input type="password" class="form-control" name="password">
             </div>
             <button type="submit" class="btn btn-dark">Login</button>
-            <p class="path">Still does not have an account? &nbsp &nbsp  <a class="button" href="/register">Register</a></p>
-            
           </form>
 
         </div>

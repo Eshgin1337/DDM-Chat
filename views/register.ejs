@@ -1,4 +1,15 @@
 <%- include('partials/header') %>
+<nav id="nv">
+  <a href="/"><strong>Home</strong></a>
+  
+  <a href="/about"><strong>About</strong></a>
+  <a href="/login"><strong>Login</strong></a>
+</nav>
+<% if(err_message !=""){ %>
+  <div class="alert alert-danger">
+    <strong><%- err_message %></strong> 
+  </div>
+<% } %>
 <div class="container mt-5">
   <h1>Register</h1>
 
@@ -18,7 +29,6 @@
               <input type="password" class="form-control" name="password">
             </div>
             <button type="submit" class="btn btn-dark">Register</button>
-            <p class="path">Already have an account? &nbsp &nbsp <a class="button" href="/login">Log in</a></p>
           </form>
 
         </div>
