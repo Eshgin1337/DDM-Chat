@@ -174,11 +174,8 @@ io.on('connection', function(socket) {
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
                 io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
             }
-            else if (!private_chat && userlist[msglist[cur_usr]] || !private_chat){
+            else if (!private_chat && !userlist[msglist[cur_usr]]){
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend to send a message!</strong>',socket.username);
-            }
-            else if (private_chat && !userlist[msglist[cur_usr]]){
-                io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">User is not online yet!</strong>',socket.username);
             }
         }
     });
