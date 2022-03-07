@@ -111,7 +111,6 @@
 
     <script>
             var socket = io();
-            
             var cur_usr = "#####";
             var num_of_msg=0;
             socket.emit('username', '');
@@ -127,9 +126,12 @@
             $('#form1').submit(function(e){
                 e.preventDefault(); 
                 
-                socket.emit('chat_message', $('#txt').val(),cur_email);
+                socket.emit('chat_message', $('#txt').val(),cur_email,privatecht);
                 $('#txt').val('');
                 return false;
+            });
+            socket.on('empty_msg_list',()=>{
+              $('#messages').empty();
             });
             socket.on('update_userlist', (data)=>{
               var html='';
@@ -156,8 +158,7 @@
               prv = elm;
               elm.style.backgroundColor = 'bisque';
               privatecht =true;
-              // console.log(username,cur_email);
-              socket.emit('private_chat',username,cur_email);
+              socket.emit('private_chat',username,cur_email,cur_usr);
             }
             socket.on('chat_message', function(msg,username){
               var usr = "";
@@ -178,6 +179,7 @@
                 $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg));
                   $('#messages').append($('<li>').html(""));
                 }
+                
               else{
                 $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg));
                   $('#messages').append($('<li>').html(""));

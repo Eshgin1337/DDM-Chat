@@ -33,6 +33,7 @@ app.use(passport.session());
 mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
 // mongoose.connect('mongodb://localhost:27017/usersDB');
 
+
 const userSchema = new mongoose.Schema({
     email: String,
     password: String,
@@ -42,12 +43,20 @@ const userSchema = new mongoose.Schema({
     groups: Array
 });
 
+const MessageSchema = new mongoose.Schema({
+    sender: String,
+    sender_username: String,
+    receiver: String,
+    messages: Array,
+    sentDate: String
+});
 
 
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model('User', userSchema);
+const Messages = new mongoose.model('Messages', MessageSchema);
 
 passport.use(User.createStrategy());
 
@@ -106,7 +115,6 @@ app.get('/submit', function (req, res) {
 });
 
 app.get('/chatting_page', function (req, res) {
-    // console.log(req.body);
     var usrnme="";
     for (var i=0;i<current_user.length;i++){
         if (current_user[i]=="@"){
@@ -127,15 +135,11 @@ app.get('/logout', function (req, res) {
 
 var userlist = [];
 var users = [];
-var private_chat=false;
 var msglist = [];
-var users_with_contacts = [];
 io.on('connection', function(socket) {
     
     socket.on('username', function(username) {
         var usrnme="";
-        var cur_em="";
-        cur_em += current_user;
         userlist[current_user_email] = socket.id;
         for (var i=0;i<current_user.length;i++){
             if (current_user[i]=="@"){
@@ -145,6 +149,7 @@ io.on('connection', function(socket) {
             usrnme+=current_user[i];
         }
         socket.username = current_user;
+        socket.email = current_user_email;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
         User.findOne({'username':current_user_email}, (err,user)=>{
@@ -154,28 +159,81 @@ io.on('connection', function(socket) {
                     io.to(userlist[current_user_email]).emit('update_userlist',users);
                 }
             }
-        })
+        });
     });
     socket.on('disconnect', function(username) {
-        var removeStr = [current_user_email]
-        userlist = userlist.filter(function(val){
-            return (removeStr.indexOf(val) == -1 ? true : false)
-          });
+        userlist[this.email]=false;
         io.emit('is_online', '🔴 <i>' + socket.username + ' left the chat..</i>');
     });
-    socket.on('private_chat', (receiver,sender)=>{
+    socket.on('private_chat', (receiver,sender,sender_username)=>{
+        io.to(userlist[sender]).emit('empty_msg_list');
+        Messages.findOne({'sender':receiver,'receiver':socket.email},(err,msg)=>{
+            if(!err){
+                if (msg){
+                    msg.messages = [...msg.messages];
+                    
+                    msg.messages.forEach(messg => {
+                        io.to(userlist[socket.email]).emit('chat_message','<strong>' + msg.sender_username + '</strong>: '+ messg.message,socket.username);
+                    });
+                    msg.save();
+                }
+            }
+        });
+        Messages.findOne({'sender':sender,'receiver':receiver},(err,msg)=>{
+            if(!err){
+                if (msg){
+                    msg.messages = [...msg.messages];
+                    msg.messages.forEach(messg => {
+                        io.to(userlist[sender]).emit('chat_message','<strong>' + msg.sender_username + '</strong>: '+ messg.message,socket.username);
+                    });
+                    msg.save();
+                }
+            }
+        });
+        Messages.create({ sender:sender,sender_username:sender_username,receiver:receiver }, function (err, sender,sender_username,receiver) {
+            if (err) return handleError(err);
+          });
         msglist[sender] = receiver;
-        // console.log(receiver,sender)
-        private_chat=true;
     });
-    socket.on('chat_message', function(message,cur_usr) {
+    socket.on('chat_message', function(message,cur_usr,private_chat) {
         if (!message==''){
             if (private_chat && userlist[msglist[cur_usr]]){
+                Messages.findOne({'sender':cur_usr},(err,msg)=>{
+                    if (!err){
+                        if (msg){
+                            msg.sender = cur_usr;
+                            msg.sender_username = socket.username;
+                            msg.receiver = msglist[cur_usr];
+                            msg.sentDate = Date.now();
+                            msg.messages = [...msg.messages,{"message": message}];
+                            msg.save();
+                        }
+                    }
+                });
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
-                io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
+                if (msglist[msglist[cur_usr]]==cur_usr){
+                    io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
+                }
             }
-            else if (!private_chat && !userlist[msglist[cur_usr]]){
+            else if (!private_chat){
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend to send a message!</strong>',socket.username);
+            }
+            else if (private_chat && !userlist[msglist[cur_usr]]){
+                // put messages to cash
+                Messages.findOne({'sender':cur_usr},(err,msg)=>{
+                    if (!err){
+                        if (msg){
+                            // console.log(msg.messages);
+                            msg.sender = cur_usr;
+                            msg.sender_username = socket.username;
+                            msg.receiver = msglist[cur_usr];
+                            msg.sentDate = Date.now();
+                            msg.messages = [...msg.messages,{"message": message}];
+                            msg.save();
+                        }
+                    }
+                });
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username);
             }
         }
     });
@@ -198,15 +256,12 @@ io.on('connection', function(socket) {
                         user.contactList.forEach(element => {
                             if (element.email==contact){
                                 alreadyhavethatcontact=true;
-                            
                             }
                         });
                         if (!alreadyhavethatcontact){
                             user.contactList = [...user.contactList, {"email": contact}];
                             user.save();
-                            // users_with_contacts[cur_email].push(contact);
                             users = user.contactList;
-                            // users.push(socket.username);
                             io.to(userlist[cur_email]).emit('update_userlist',users);
                         }
                         else{
@@ -216,7 +271,6 @@ io.on('connection', function(socket) {
                     else{
                         io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:orange">Such user doesnt exist!</strong>',socket.username);
                     }
-                    // console.log(user.contactList,userlist);
                 }
             }
         });
@@ -226,12 +280,9 @@ io.on('connection', function(socket) {
                     if (exists && !alreadyhavethatcontact){
                         user.contactList = [...user.contactList, {"email": cur_email}];
                         user.save();
-                        // users_with_contacts[contact].push(cur_email);
                         users = user.contactList;
-                        // users.push(socket.username);
                         io.to(userlist[contact]).emit('update_userlist',users);
                     }
-                    // console.log(user.contactList,userlist);
                 }
             }
         });
