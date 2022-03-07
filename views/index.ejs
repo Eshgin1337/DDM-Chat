@@ -7,10 +7,10 @@
     <title>Simple Group Chat on Node.js</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font: 13px Helvetica, Arial; }
+        body { font: 13px Helvetica, Arial; font-size: 1vw;}
         /* form {background: green; }padding: 3px; position: fixed; bottom: 0; width: 100%; border-color: #000; border-top-style: solid; border-top-width: 1px;} */
-        #frm3 input { border-style: solid;position:absolute;bottom: 30%;left:20%; border-width: 1%; padding: 3%; width: 45%;height: 1%; margin-right: .5%; }
-        #frm3 button { background: rgb(130, 224, 0); position:absolute;bottom:29.5%;left:67.7%; padding: 3%;height:5%; border-radius: 10%;}
+        #frm3 input { border-style: solid;position:absolute;bottom: 30%;left:20%; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
+        #frm3 button { background: rgb(130, 224, 0); position:absolute;bottom:29.5%;left:67.7%; padding: 3%;height:5vh; border-radius: 10%;font-size:1vw;}
         #form1 input { border-style: solid;position:fixed;bottom: 1%; border-width: 1px; padding: 1%; width: 38%;height: 6%; margin-right: .5%; border-radius: 2%;}
         #form1 button {font-size: large;width: 10%; background: rgb(130, 224, 255); position:fixed;bottom:1%;left:58.7%; padding: 1%;height:6%; border-radius: 10%;}
       
@@ -39,15 +39,7 @@
           background:yellow;
           border-left:solid black 2px;
         }
-        #frm3 img {
-          width: 40%;
-          height: 25%;
-          overflow: hidden;
-          margin-left: 20%;
-          margin-top: 20%;
-          border: 2px solid #333;
-          border-radius: 200px;
-        }
+        
         #users li {
           height:30%;
           padding:6%;
@@ -84,30 +76,6 @@
         <button id="btn1" onclick="addContact()">add contact</button>
       </form>
     </div>
-   
-    <script>
-        var tableau = ["https://designoholic.com/wp-content/uploads/2017/07/red-five-dribs.png",
-                      "https://designoholic.com/wp-content/uploads/2017/07/avatar-rogemon.png",
-                      "https://designoholic.com/wp-content/uploads/2017/07/avatar-colored-d.png", 
-                      "https://designoholic.com/wp-content/uploads/2017/07/yala.png",
-                      "https://designoholic.com/wp-content/uploads/2017/07/avatar_dribbble-02.jpg"
-                      ];
-
-        function tabRandom (aleatoir){
-                                  var temp = 0;
-                                  var random = 0;
-                                  for (let i = 0; i < tableau.length; i++) {
-                                      random = Math.floor(Math.random() * tableau.length);
-                                      temp = tableau[i];
-                                      tableau[i] = tableau[random];
-                                      tableau[random] = temp;
-                                  }
-                                  return tableau[aleatoir]
-                              }
-
-        $("#frm3").prepend(`<img src="${tabRandom(1)}">`)
-
-    </script>
 
     <script>
             var socket = io();
