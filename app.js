@@ -58,8 +58,6 @@ userSchema.plugin(findOrCreate);
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
 
-Messages.collection.drop();
-
 passport.use(User.createStrategy());
 
 passport.serializeUser(function (user, done) {
@@ -169,38 +167,31 @@ io.on('connection', function(socket) {
     });
     socket.on('private_chat', (receiver,sender,sender_username)=>{
         io.to(userlist[sender]).emit('empty_msg_list');
-        Messages.findOne({'sender':receiver},(err,msg)=>{
+        Messages.find({'sender':{$in: [receiver,sender]}},(err,obj)=>{
             if(!err){
-                if (msg && userlist[sender]){
-                    msg.messages = [...msg.messages];
-                    
-                    msg.messages.forEach(messg => {
-                        console.log(messg);
-                        if (sender==messg.receiver && receiver==messg.sender){
-                            io.to(userlist[sender]).emit('chat_message','<strong>' + msg.sender_username + '</strong>: '+ messg.message,socket.username);
-                        }
+                if (obj && userlist[sender]){
+                    obj.forEach(msg => {
+                        msg.messages = [...msg.messages];
+                        // msg.save();
+                        msg.messages.forEach(messg => {
+                            
+                            if ((sender==messg.receiver && receiver==messg.sender) || (sender==messg.sender && receiver==messg.receiver)){
+                                io.to(userlist[sender]).emit('get_offline_messages','<strong>' + msg.sender_username + '</strong>: '+ messg.message,messg.sentDate);
+                                
+                            }
+                        });
+                        
                     });
+                    io.to(userlist[sender]).emit('show_offline_messages');
+                }
+            }
+        });
 
-                    msg.save();
-                }
-            }
-        });
-        Messages.findOne({'sender':sender},(err,msg)=>{
-            if(!err){
-                if (msg && userlist[sender]){
-                    msg.messages = [...msg.messages];
-                    msg.messages.forEach(messg => {
-                        if (receiver==messg.receiver && sender==messg.sender){
-                            io.to(userlist[sender]).emit('chat_message','<strong>' + msg.sender_username + '</strong>: '+ messg.message,socket.username);
-                        }
-                    });
-                    msg.save();
-                }
-            }
-        });
+        
         Messages.create({ sender:sender,sender_username:sender_username,receiver:receiver }, function (err, sender,sender_username,receiver) {
             if (err) return handleError(err);
           });
+        chech1=true;
         msglist[sender] = receiver;
     });
     socket.on('chat_message', function(message,cur_usr,private_chat) {
@@ -227,11 +218,9 @@ io.on('connection', function(socket) {
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend to send a message!</strong>',socket.username);
             }
             else if (private_chat && !userlist[msglist[cur_usr]]){
-                // put messages to cash
                 Messages.findOne({'sender':cur_usr},(err,msg)=>{
                     if (!err){
                         if (msg){
-                            // console.log(msg.messages);
                             msg.sender = cur_usr;
                             msg.sender_username = socket.username;
                             msg.receiver = msglist[cur_usr];

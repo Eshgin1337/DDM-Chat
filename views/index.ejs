@@ -8,7 +8,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font: 13px Helvetica, Arial; font-size: 1vw;}
-        /* form {background: green; }padding: 3px; position: fixed; bottom: 0; width: 100%; border-color: #000; border-top-style: solid; border-top-width: 1px;} */
         #frm3 input { border-style: solid;position:absolute;bottom: 30%;left:20%; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
         #frm3 button { background: rgb(130, 224, 0); position:absolute;bottom:29.5%;left:67.7%; padding: 3%;height:5vh; border-radius: 10%;font-size:1vw;}
         #form1 input { border-style: solid;position:fixed;bottom: 1%; border-width: 1px; padding: 1%; width: 38%;height: 6%; margin-right: .5%; border-radius: 2%;}
@@ -16,7 +15,6 @@
       
         #messages {list-style-type: none; margin: 0%; padding: 0%; }
         #messages li {padding: 6%; }
-        /* #messages li:nth-child(odd) { background: #eee; } */
         #frm{
           margin-left: 20.5%;
           width: 48%;
@@ -27,7 +25,6 @@
           left:0%;
           width:20%;
           bottom: 0%;
-          /* background:green; */
           border-right:solid black 2px;
         }
         #frm3{
@@ -81,12 +78,18 @@
             var socket = io();
             var cur_usr = "#####";
             var num_of_msg=0;
+            var offline_messages = [];
             socket.emit('username', '');
             var chaecker = false;
             var parser = new DOMParser();
             var prvelm;
             var privatecht = false;
             var cur_email="";
+            function Ascending_sort(a, b) {
+              console.log(b.sendDate,a.sendDate,b.sendDate>a.sendDate);
+                      return (b.sendDate >
+                          a.sendDate)? 1 : -1; 
+                  }
             $('#form2').submit(function(e){
               e.preventDefault();
               $('#em').val('');
@@ -100,6 +103,48 @@
             });
             socket.on('empty_msg_list',()=>{
               $('#messages').empty();
+            });
+            socket.on('get_offline_messages', function(msg,sendDate){
+              offline_messages.push({'msg':msg,'sendDate':sendDate});
+              offline_messages =  offline_messages.sort(Ascending_sort);
+              offline_messages =  offline_messages.reverse();
+              console.log(offline_messages);
+            });
+            socket.on('show_offline_messages',function(){
+              if (offline_messages!==[]){
+              console.log('yes');
+              offline_messages.forEach(message => {
+                msg=message.msg;
+                console.log(msg);
+                  var usr = "";
+                  t=false;
+                  for (i=0;i<msg.length;i++){
+                    if (msg[i]=='>'){
+                      t=true;
+                      continue;
+                    }
+                    if (msg[i]=='<' && t==true){
+                      break;
+                    }
+                    if (t==true){
+                      usr+=msg[i];
+                    }
+                  }
+                  if (cur_usr!=usr){
+                    $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg));
+                      $('#messages').append($('<li>').html(""));
+                    }
+                    
+                  else{
+                    $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg));
+                      $('#messages').append($('<li>').html(""));
+                  }
+                  window.scrollBy(0,1000000000);
+                  num_of_msg+=1;
+              });
+              offline_messages=[];
+            }
+              
             });
             socket.on('update_userlist', (data)=>{
               var html='';
