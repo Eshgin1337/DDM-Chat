@@ -60,7 +60,6 @@ userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
-Messages.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -229,7 +228,7 @@ io.on('connection', function(socket) {
                             msg.sender = cur_usr;
                             msg.sender_username = socket.username;
                             msg.receiver = msglist[cur_usr];
-                            msg.sentHour = t_.getHours();
+                            msg.sentHour = toString(Number(t_.getHours())+4);
                             msg.sentMinute = t_.getMinutes();
                             msg.sentMonth = t_.getMonth();
                             msg.sentDate = Date.now();
@@ -238,9 +237,9 @@ io.on('connection', function(socket) {
                         }
                     }
                 });
-                io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),t_.getHours(),months[Number(t_.getMonth())]);
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),toString(Number(t_.getHours())+4),months[Number(t_.getMonth())]);
                 if (msglist[msglist[cur_usr]]==cur_usr){
-                    io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),t_.getHours(),months[Number(t_.getMonth())]);
+                    io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),toString(Number(t_.getHours())+4),months[Number(t_.getMonth())]);
                 }
             }
             else if (!private_chat){
@@ -254,7 +253,7 @@ io.on('connection', function(socket) {
                             msg.sender_username = socket.username;
                             msg.receiver = msglist[cur_usr];
                             msg.sentMinute = t_.getMinutes();
-                            msg.sentHour = t_.getHours();
+                            msg.sentHour = toString(Number(t_.getHours())+4);
                             msg.sentMonth = t_.getMonth();
                             msg.sentDate = Date.now();
                             msg.messages = [...msg.messages,{"message": message,"sender":cur_usr,"receiver":msglist[cur_usr],"sentDate":msg.sentDate,"sentHour":msg.sentHour,"sentMinute":msg.sentMinute,"sentMonth":msg.sentMonth}];
@@ -262,7 +261,7 @@ io.on('connection', function(socket) {
                         }
                     }
                 });
-                io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),t_.getHours(),months[Number(t_.getMonth())]);
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),toString(Number(t_.getHours())+4),months[Number(t_.getMonth())]);
             }
         }
     });
