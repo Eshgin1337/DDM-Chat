@@ -104,15 +104,14 @@
             socket.on('empty_msg_list',()=>{
               $('#messages').empty();
             });
-            socket.on('get_offline_messages', function(msg,sendDate){
-              offline_messages.push({'msg':msg,'sendDate':sendDate});
+            socket.on('get_offline_messages', function(msg,sendDate,sentHour,sentMinute,sentMonth){
+              offline_messages.push({'msg':msg,'sendDate':sendDate,'sentHour':sentHour,'sentMinute':sentMinute,'sentMonth':sentMonth});
               offline_messages =  offline_messages.sort(Ascending_sort);
               offline_messages =  offline_messages.reverse();
               console.log(offline_messages);
             });
             socket.on('show_offline_messages',function(){
               if (offline_messages!==[]){
-              console.log('yes');
               offline_messages.forEach(message => {
                 msg=message.msg;
                 console.log(msg);
@@ -131,12 +130,23 @@
                     }
                   }
                   if (cur_usr!=usr){
-                    $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg));
+                    if (message.sentMinute<10){
+                      $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+message.sentMonth+" "+message.sentHour+":0"+message.sentMinute+"</p>"));
+                    }
+                    else if (message.sentMinute>=10){
+                      $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+message.sentMonth+" "+message.sentHour+":"+message.sentMinute+"</p>"));
+                    }
+                    // $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg+'\n'+message.sentMonth+" "+message.sentHour+":"+message.sentMinute));
                       $('#messages').append($('<li>').html(""));
                     }
                     
                   else{
-                    $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg));
+                    if (message.sentMinute<10){
+                      $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+message.sentMonth+" "+message.sentHour+":0"+message.sentMinute+"</p>"));
+                    }
+                    else if (message.sentMinute>=10){
+                      $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+message.sentMonth+" "+message.sentHour+":"+message.sentMinute+"</p>"));
+                    }
                       $('#messages').append($('<li>').html(""));
                   }
                   window.scrollBy(0,1000000000);
@@ -173,7 +183,7 @@
               privatecht =true;
               socket.emit('private_chat',username,cur_email,cur_usr);
             }
-            socket.on('chat_message', function(msg,username){
+            socket.on('chat_message', function(msg,username,minutes,hours,month){
               var usr = "";
               t=false;
               for (i=0;i<msg.length;i++){
@@ -189,13 +199,33 @@
                 }
               }
               if (cur_usr!=usr){
-                $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg));
+                if (hours && month && minutes){
+                  if (minutes<10){
+                    $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+month+" "+hours+":0"+minutes+"</p>"));
+                  }
+                  else if (minutes>=10){
+                    $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+month+" "+hours+":"+minutes+"</p>"));
+                  }
+                }
+                else{
+                  $('#messages').append($('<li style="color:red;border:solid black 2px;">').html(msg));
+                }
                   $('#messages').append($('<li>').html(""));
                 }
                 
               else{
-                $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg));
-                  $('#messages').append($('<li>').html(""));
+                if (hours && month && minutes){
+                  if (minutes<10){
+                    $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+month+" "+hours+":0"+minutes+"</p>"));
+                  }
+                  else if (minutes>=10){
+                    $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg+'<br><br><p style="color:blue">'+month+" "+hours+":"+minutes+"</p>"));
+                  }
+                }
+                else{
+                    $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html(msg));
+                }
+                $('#messages').append($('<li>').html(""));
                }
                window.scrollBy(0,1000000000);
                num_of_msg+=1;
