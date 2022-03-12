@@ -60,7 +60,7 @@ userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
-
+Messages.collection.drop();
 passport.use(User.createStrategy());
 
 passport.serializeUser(function (user, done) {
