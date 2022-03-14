@@ -137,7 +137,9 @@ app.get('/logout', function (req, res) {
     current_user = "";
     res.redirect("/");
 })
-
+app.get('/verify',function(req,res){
+    res.render('verify');
+})
 var userlist = [];
 var users = [];
 var msglist = [];
@@ -357,7 +359,7 @@ app.post('/register', function (req, res) {
                       console.log('Email sent: ' + info.response);
                     }
                   });
-                  alert('Check your email!');
+                  res.render('verify');
 
                 
             }
