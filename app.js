@@ -9,10 +9,11 @@ const io = require('socket.io')(http);
 const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
+const alert = require('alert');
 // passport-local
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
-
+const nodemailer = require('nodemailer');
 var current_user = '';
 var current_user_email = '';
 var usernm = "";
@@ -60,7 +61,8 @@ userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
-Messages.collection.drop();
+User.collection.drop();
+
 passport.use(User.createStrategy());
 
 passport.serializeUser(function (user, done) {
@@ -144,7 +146,7 @@ io.on('connection', function(socket) {
     
     socket.on('username', function(username) {
         var usrnme="";
-        console.log(current_user_email);
+        // console.log(current_user_email);
         userlist[current_user_email] = socket.id;
         for (var i=0;i<current_user.length;i++){
             if (current_user[i]=="@"){
@@ -330,11 +332,34 @@ app.post('/register', function (req, res) {
                 res.render('register', {err_message:"Invalid Register, such user already exists!"});
             }
             else {
-                passport.authenticate("local")(req, res, function () {
-                    current_user = username;
-                    current_user_email = username
-                    res.redirect('/chatting_page');
-                })
+                current_user = username;
+                current_user_email = username;
+                var transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                      user: 'oyuncuandroid74@gmail.com',
+                      pass: 'dauexjpsbplkoezm'
+                    }
+                  });
+                  let from = `DDMCHAT <m***@gmail.com>`
+                
+                  var mailOptions = {
+                    from: from,
+                    to: username,
+                    subject: 'EMAIL VERIFICATION',
+                    html: '<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/chatting_page">Chatting Page</a>',
+                  };
+                  
+                  transporter.sendMail(mailOptions, function(error, info){
+                    if (error) {
+                      console.log(error);
+                    } else {
+                      console.log('Email sent: ' + info.response);
+                    }
+                  });
+                  alert('Check your email!');
+
+                
             }
         })
     }
