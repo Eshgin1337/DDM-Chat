@@ -61,7 +61,6 @@ userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
-User.collection.drop();
 
 passport.use(User.createStrategy());
 
