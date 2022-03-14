@@ -139,6 +139,14 @@ app.get('/logout', function (req, res) {
 app.get('/verify',function(req,res){
     res.render('verify');
 })
+app.get('/verification/:username/:password', async function(req,res){
+    User.register({username: req.params.username }, req.params.password, function (err, user) {
+        current_user = req.params.username;
+        current_user_email = req.params.username;
+        res.redirect('/chatting_page');
+        
+    })
+});
 var userlist = [];
 var users = [];
 var msglist = [];
@@ -323,46 +331,46 @@ io.on('connection', function(socket) {
 app.post('/register', function (req, res) {
     const username = req.body.username;
     const password = req.body.password;
+    
     if(password.length<8){
         res.render('register', {err_message:"Password cannot be less than 8 characters!"});
     }
     else{
-        User.register({username: username}, password, function (err, user) {
-            if (err) { 
-                console.log(err);
-                res.render('register', {err_message:"Invalid Register, such user already exists!"});
+        User.findOne({'username':username}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    console.log('yes');
+                    res.render('register', {err_message:"This user already exists!"});
+                }
+                if (!user){
+                    var transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                          user: 'oyuncuandroid74@gmail.com',
+                          pass: 'dauexjpsbplkoezm'
+                        }
+                      });
+                      let from = `DDMCHAT <m***@gmail.com>`
+                    
+                      var mailOptions = {
+                        from: from,
+                        to: username,
+                        subject: 'EMAIL VERIFICATION',
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
+                      };
+                      
+                      transporter.sendMail(mailOptions, function(error, info){
+                        if (error) {
+                          console.log(error);
+                        } else {
+                          console.log('Email sent: ' + info.response);
+                        }
+                      });
+                      res.render('verify');
+                }
             }
-            else {
-                current_user = username;
-                current_user_email = username;
-                var transporter = nodemailer.createTransport({
-                    service: 'gmail',
-                    auth: {
-                      user: 'oyuncuandroid74@gmail.com',
-                      pass: 'dauexjpsbplkoezm'
-                    }
-                  });
-                  let from = `DDMCHAT <m***@gmail.com>`
-                
-                  var mailOptions = {
-                    from: from,
-                    to: username,
-                    subject: 'EMAIL VERIFICATION',
-                    html: '<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/chatting_page">Chatting Page</a>',
-                  };
-                  
-                  transporter.sendMail(mailOptions, function(error, info){
-                    if (error) {
-                      console.log(error);
-                    } else {
-                      console.log('Email sent: ' + info.response);
-                    }
-                  });
-                  res.render('verify');
-
-                
-            }
-        })
+        });
+       
     }
 });
 
