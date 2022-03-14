@@ -355,7 +355,7 @@ app.post('/register', function (req, res) {
                         from: from,
                         to: username,
                         subject: 'EMAIL VERIFICATION',
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddmchat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
                       };
                       
                       transporter.sendMail(mailOptions, function(error, info){
