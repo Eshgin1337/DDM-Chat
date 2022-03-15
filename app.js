@@ -132,9 +132,9 @@ app.get('/chatting_page', function (req, res) {
 });
 
 app.get('/logout', function (req, res) {
-    res.logout();
+    req.logout();
     current_user = "";
-    res.redirect("/");
+    res.redirect("/login");
 })
 app.get('/verify',function(req,res){
     res.render('verify');
