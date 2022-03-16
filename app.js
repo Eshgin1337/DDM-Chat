@@ -234,6 +234,7 @@ io.on('connection', function(socket) {
                 }
             }
         });
+        msglist[sender]="";
         grpmsglist[sender] = groupname;
     });
 
@@ -263,6 +264,7 @@ io.on('connection', function(socket) {
         Messages.create({ sender:sender,sender_username:sender_username,receiver:receiver }, function (err, sender,sender_username,receiver) {
             if (err) return handleError(err);
           });
+        grpmsglist[sender]="";
         msglist[sender] = receiver;
     });
     socket.on('chat_message', function(message,cur_usr,private_chat,group_chat) {
