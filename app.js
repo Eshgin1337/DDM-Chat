@@ -14,6 +14,7 @@ const alert = require('alert');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
 const nodemailer = require('nodemailer');
+const { randomInt } = require('crypto');
 var current_user = '';
 var current_user_email = '';
 var usernm = "";
@@ -55,13 +56,23 @@ const MessageSchema = new mongoose.Schema({
     sentDate: String
 });
 
+const GroupSchema = new mongoose.Schema({
+    groupName: String,
+    groupAdmin: String,
+    groupMembers: Array,
+    groupMessages: Array
+});
+
 
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
-
+const Groups = new mongoose.model('Groups',GroupSchema);
+Groups.collection.drop();
+User.collection.drop();
+Messages.collection.drop();
 passport.use(User.createStrategy());
 
 passport.serializeUser(function (user, done) {
@@ -99,7 +110,6 @@ app.get('/auth/google',
 app.get('/auth/google/chatting_page', 
   passport.authenticate('google', { failureRedirect: '/login' }),
   function(req, res) {
-      console.log(current_user_email);
     res.redirect('/chatting_page');
   });
 
@@ -149,7 +159,9 @@ app.get('/verification/:username/:password', async function(req,res){
 });
 var userlist = [];
 var users = [];
+var groups = [];
 var msglist = [];
+var grpmsglist = [];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 io.on('connection', function(socket) {
     
@@ -166,6 +178,7 @@ io.on('connection', function(socket) {
         }
         socket.username = current_user;
         socket.email = current_user_email;
+        socket.fff = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
 
@@ -182,7 +195,9 @@ io.on('connection', function(socket) {
             if (!err) {
                 if (user) {
                     users = [...user.contactList];
+                    groups = [...user.groups];
                     io.to(userlist[current_user_email]).emit('update_userlist',users);
+                    io.to(userlist[current_user_email]).emit('update_groups',groups);
                 }
             }
         });
@@ -199,6 +214,30 @@ io.on('connection', function(socket) {
         });
         io.emit('is_online', '');
     });
+
+    socket.on('group_chat', function(groupname,sender){
+        io.to(userlist[sender]).emit('empty_msg_list');
+        Groups.findOne({'groupName':groupname}, function(err,group){
+            if (!err){
+                if(group){
+                    group.groupMessages = [...group.groupMessages];
+                    group.groupMessages.forEach(messg => {
+                        var usrnme="";
+                            for (var i=0;i<messg.sender.length;i++){
+                                if (messg.sender[i]=="@"){
+                                    break;
+                                }
+                                usrnme+=messg.sender[i];
+                            }
+                        io.to(userlist[sender]).emit('get_offline_messages','<strong>' + usrnme + '</strong>: '+ messg.message,messg.sentDate,messg.sentHour,messg.sentMinute,months[Number(messg.sentMonth)]);
+                    });
+                    io.to(userlist[sender]).emit('show_offline_messages');
+                }
+            }
+        });
+        grpmsglist[sender] = groupname;
+    });
+
     socket.on('private_chat', (receiver,sender,sender_username)=>{
         io.to(userlist[sender]).emit('empty_msg_list');
         Messages.find({'sender':{$in: [receiver,sender]}},(err,obj)=>{
@@ -207,7 +246,6 @@ io.on('connection', function(socket) {
                     obj.forEach(msg => {
                         msg.messages = [...msg.messages];
                         msg.messages.forEach(messg => {
-                            console.log(messg);
                             if ((sender==messg.receiver && receiver==messg.sender) || (sender==messg.sender && receiver==messg.receiver)){
                                 
 
@@ -229,7 +267,7 @@ io.on('connection', function(socket) {
         chech1=true;
         msglist[sender] = receiver;
     });
-    socket.on('chat_message', function(message,cur_usr,private_chat) {
+    socket.on('chat_message', function(message,cur_usr,private_chat,group_chat) {
         if (!message==''){
             var t_ = new Date();
             if (private_chat && userlist[msglist[cur_usr]]){
@@ -253,8 +291,8 @@ io.on('connection', function(socket) {
                     io.to(userlist[msglist[cur_usr]]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
                 }
             }
-            else if (!private_chat){
-                io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend to send a message!</strong>',socket.username);
+            else if (!private_chat && !group_chat){
+                io.to(userlist[cur_usr]).emit('chat_message', '<strong style="color:purple">Select a friend or a group to send a message!</strong>',socket.username);
             }
             else if (private_chat && !userlist[msglist[cur_usr]]){
                 Messages.findOne({'sender':cur_usr},(err,msg)=>{
@@ -274,7 +312,118 @@ io.on('connection', function(socket) {
                 });
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
             }
+            else if (group_chat){
+                console.log(grpmsglist, grpmsglist[cur_usr],Groups);
+                Groups.findOne({'groupName':grpmsglist[cur_usr]}, function(err,group){
+                    if (!err){
+                        if (group){
+                            
+                            group.groupMessages = [...group.groupMessages, {"sender":cur_usr,"message":message,"sentDate":Date.now().toString(),"sentHour":(Number(t_.getHours())+4).toString(),"sentMinute":t_.getMinutes(),"sentMonth":t_.getMonth()}];
+                            group.groupMembers.forEach(element => {
+                                io.to(userlist[element.email]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
+                            });
+                            io.to(userlist[group.groupAdmin]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
+                            group.save();
+                        }
+                    }
+                });
+
+                
+            }
         }
+    });
+
+    socket.on('addpersontogroup', function(groupname,addeduser,adder){
+        User.findOne({'username':addeduser}, function(err,user){
+            if (!err){
+                if (!user){
+                    socket.fff=true;
+                    io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user doesnt exist!</strong>',socket.username)
+                }
+            }
+        });
+        if (!socket.fff){
+            Groups.findOne({'groupName':groupname}, function(err,group){
+                if (!err){
+                    if (group){
+                        
+                        group.groupMembers = [...group.groupMembers]
+                        group.groupMembers.forEach(element => {
+                            if (element.email===addeduser){
+                                socket.fff=true;
+                                
+                            }
+                            
+                        });
+                        if (!socket.fff){
+                            group.groupMembers = [...group.groupMembers, {'email':addeduser}];  
+                        }
+                        else if (addeduser===adder){
+                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">Cant add yourself into a group!</strong>',socket.username)
+                        }
+                        else if (socket.fff){
+                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user is already in this group!</strong>',socket.username)
+                        }
+                        group.save();  
+                    }
+                }
+            });
+        }
+        if (!socket.fff){
+        User.findOne({'username':addeduser}, function(err,user){
+            if (!err){
+                if (user){
+                    xxx=false;
+                    user.groups = [...user.groups];
+                    user.groups.forEach(element => {
+                        if (element.groupname===groupname){
+                            xxx=true;
+                        }
+                    });
+                    if (xxx===false){
+                        
+                        user.groups = [...user.groups, {'groupname':groupname}];
+                    }
+                    groups = user.groups;
+                    user.save();
+                    io.to([userlist[addeduser]]).emit('update_groups', groups);
+                }
+            }
+        });
+    }
+    socket.fff=false;
+    });
+
+
+    socket.on('add_group', function(groupname,cur_email){
+        Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
+            if (err) throw err;
+        });
+        User.findOne({'username':cur_email}, function(err,user){
+            if (!err){
+                if (user){
+                    xxx=false;
+                    user.groups = [...user.groups];
+                    user.groups.forEach(element => {
+                        if (element.groupname===groupname){
+                            xxx=true;
+                        }
+                    });
+                    if (xxx===true){
+                        user.groups = [...user.groups, {'groupname':groupname+`${randomInt(9)}`}];
+                    }
+                    else{
+                        user.groups = [...user.groups, {'groupname':groupname}];
+                    }
+                    groups = user.groups;
+                    user.save();
+                    
+                    io.to([userlist[cur_email]]).emit('update_groups', groups);
+                }
+            }
+        });
+        
+        
     });
     socket.on('add_contact', function(contact,cur_email){
         var exists = false;
@@ -345,8 +494,8 @@ app.post('/register', function (req, res) {
                     var transporter = nodemailer.createTransport({
                         service: 'gmail',
                         auth: {
-                          user: 'oyuncuandroid74@gmail.com',
-                          pass: 'dauexjpsbplkoezm'
+                          user: 'ddmchatchattingapp@gmail.com',
+                          pass: 'bhyvtrsyssvodveg'
                         }
                       });
                       let from = `DDMCHAT <m***@gmail.com>`
@@ -355,7 +504,7 @@ app.post('/register', function (req, res) {
                         from: from,
                         to: username,
                         subject: 'EMAIL VERIFICATION',
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
                       };
                       
                       transporter.sendMail(mailOptions, function(error, info){

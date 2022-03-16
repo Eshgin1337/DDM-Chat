@@ -8,11 +8,14 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font: 13px Helvetica, Arial; font-size: 1vw;}
-        #frm3 input { border-style: solid;position:absolute;bottom: 30%;left:20%; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
+        #frm3 #em { border-style: solid;position:absolute;bottom: 30%;left:20%; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
+        #frm3 #create_group { border-style: solid; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
         #frm3 button { background: rgb(130, 224, 0); position:absolute;bottom:29.5%;left:67.7%; padding: 3%;height:5vh; border-radius: 10%;font-size:1vw;}
         #form1 input { border-style: solid;position:fixed;bottom: 1%; border-width: 1px; padding: 1%; width: 38%;height: 6%; margin-right: .5%; border-radius: 2%;}
         #form1 button {font-size: large;width: 10%; background: rgb(130, 224, 255); position:fixed;bottom:1%;left:58.7%; padding: 1%;height:6%; border-radius: 10%;}
-      
+        #frm2dv1 {position: relative; height:5vh;}
+        #frm2dv2 {position: relative;top:50%; height: 5vh;}
+        #frm3 #form3 { position:relative;top:70%; margin-right: .5%; }
         #messages {list-style-type: none; margin: 0%; padding: 0%; }
         #messages li {padding: 6%; }
         #frm{
@@ -36,15 +39,31 @@
           background:yellow;
           border-left:solid black 2px;
         }
-        
+        #users{
+          height: 1000%;
+          overflow:scroll;
+        }
         #users li {
-          height:30%;
+          height:15%;
           padding:6%;
           background-color: greenyellow;
           border:solid black 4px;
         }
         #users li:hover{
           background-color: bisque;
+        }
+        #groups{
+          height: 800%;
+          overflow:scroll;
+        }
+        #groups li {
+          height:15%;
+          padding:6%;
+          background-color: lightcoral;
+          border:solid black 4px;
+        }
+        #groups li:hover{
+          background-color: lightblue;
         }
         
     </style>
@@ -53,9 +72,17 @@
   </head>
   <body>
     <div id="frm2">
-      <h1 style="text-align: center;">UserList</h1>
-      <hr>
-      <ul id="users"></ul>
+      <div id="frm2dv1">
+        <h1 style="text-align: center;">UserList</h1>
+        <hr>
+        <ul id="users"></ul>
+      </div>
+      <div id="frm2dv2">
+        <hr>
+        <h1 style="text-align: center;">GroupList</h1>
+        <hr>
+        <ul id="groups"></ul>
+      </div>
     </div>
     <div id="frm">
       <ul id="messages"></ul>
@@ -68,12 +95,19 @@
         <br>
         <h1 style="position:absolute;left:10%;color:red; margin-left: 17%;"><%- username %></h1>
         <br>
-        <input name="tag" id='tag' autocomplete="off" autofocus="on" type="text" placeholder="Type the tagname of the contact" />
+        <!-- <input name="tag" id='tag' autocomplete="off" autofocus="on" type="text" placeholder="Type the tagname of the contact" /> -->
         <input name="em" id='em' autocomplete="off" type="text" placeholder="Type the email" />
         <button id="btn1" onclick="addContact()">add contact</button>
       </form>
       <form action="/logout" method="get">
         <button type="submit" style="position:absolute;top:2%;background-color:aqua">logout</button>
+      </form>
+      <form id="form3">
+        <h1>Create Group</h1>
+        <br>
+        <label for="create_group">Group Name</label>
+        <input name="create_group" id="create_group">
+        <button id="btn1" onclick="addGroup()" type="submit" style="position: absolute;top:60%; background-color:lightcoral">Create_Group</button>
       </form>
     </div>
 
@@ -81,12 +115,15 @@
             var socket = io();
             var cur_usr = "#####";
             var num_of_msg=0;
+            var t=0;
             var offline_messages = [];
+            var grouplist = [];
             socket.emit('username', '');
             var chaecker = false;
             var parser = new DOMParser();
             var prvelm;
             var privatecht = false;
+            var groupcht = false;
             var cur_email="";
             function Ascending_sort(a, b) {
               console.log(b.sendDate,a.sendDate,b.sendDate>a.sendDate);
@@ -97,10 +134,14 @@
               e.preventDefault();
               $('#em').val('');
             });
+            $('#form3').submit(function(e){
+              e.preventDefault();
+              $('#create_group').val('');
+            });
             $('#form1').submit(function(e){
                 e.preventDefault(); 
                 
-                socket.emit('chat_message', $('#txt').val(),cur_email,privatecht);
+                socket.emit('chat_message', $('#txt').val(),cur_email,privatecht,groupcht);
                 $('#txt').val('');
                 return false;
             });
@@ -157,8 +198,17 @@
               });
               offline_messages=[];
             }
-              
             });
+
+            socket.on('update_groups', (data)=>{
+              var html='';
+              data.forEach(element => {
+                html+='<li onclick="ongroupselect(this.innerHTML,this)">'+element.groupname+`</li>`;
+                html+=`<button onclick="addpersontogroup('${element.groupname}')" style="margin-left:0%;">Add Person+</button>`;
+              });
+              document.getElementById('groups').innerHTML = html;
+            });
+
             socket.on('update_userlist', (data)=>{
               var html='';
               data.forEach(element => {
@@ -168,6 +218,16 @@
               });
               document.getElementById('users').innerHTML = html;
             });
+            function addGroup(){
+              grouplist.push($("#create_group").val());
+              socket.emit('add_group', $('#create_group').val(),cur_email);
+              
+            }
+            function addpersontogroup(groupname){
+              console.log(groupname);
+              var addeduser = prompt('Please type the email of a person to add to the group!','');
+              socket.emit('addpersontogroup',groupname,addeduser,cur_email);
+            }
             function addContact(){
               if ($("#em").val()==cur_email){
                 $("#messages").append($('<li style="color:black;border:solid black 2px;">').html('Cannot add yourself to contactlist!'));
@@ -177,6 +237,16 @@
                 socket.emit('add_contact', $('#em').val(),cur_email);
               }
             }
+            function ongroupselect(groupname,elm){
+              if (groupcht){
+                grp.style.backgroundColor = 'lightcoral';
+              }
+              grp = elm;
+              elm.style.backgroundColor = 'lightblue';
+              groupcht =true;
+              privatecht=false;
+              socket.emit('group_chat',groupname,cur_email);
+            }
             function onuserselect(username,elm){
               if (privatecht){
                 prv.style.backgroundColor = 'greenyellow';
@@ -184,6 +254,7 @@
               prv = elm;
               elm.style.backgroundColor = 'bisque';
               privatecht =true;
+              groupcht=false;
               socket.emit('private_chat',username,cur_email,cur_usr);
             }
             socket.on('chat_message', function(msg,username,minutes,hours,month){
