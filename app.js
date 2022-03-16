@@ -70,7 +70,9 @@ userSchema.plugin(findOrCreate);
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
-
+User.collection.drop();
+Messages.collection.drop();
+Groups.collection.drop();
 passport.use(User.createStrategy());
 
 passport.serializeUser(function (user, done) {
@@ -177,6 +179,8 @@ io.on('connection', function(socket) {
         socket.username = current_user;
         socket.email = current_user_email;
         socket.fff = false;
+        socket.exists = false;
+        socket.alreadyhavethatcontact = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
 
@@ -262,7 +266,6 @@ io.on('connection', function(socket) {
         Messages.create({ sender:sender,sender_username:sender_username,receiver:receiver }, function (err, sender,sender_username,receiver) {
             if (err) return handleError(err);
           });
-        chech1=true;
         msglist[sender] = receiver;
     });
     socket.on('chat_message', function(message,cur_usr,private_chat,group_chat) {
@@ -318,7 +321,10 @@ io.on('connection', function(socket) {
                             
                             group.groupMessages = [...group.groupMessages, {"sender":cur_usr,"message":message,"sentDate":Date.now().toString(),"sentHour":(Number(t_.getHours())+4).toString(),"sentMinute":t_.getMinutes(),"sentMonth":t_.getMonth()}];
                             group.groupMembers.forEach(element => {
-                                io.to(userlist[element.email]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
+                                
+                                if (grpmsglist[element.email]===grpmsglist[cur_usr]){
+                                    io.to(userlist[element.email]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
+                                }
                             });
                             io.to(userlist[group.groupAdmin]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
                             group.save();
@@ -424,12 +430,10 @@ io.on('connection', function(socket) {
         
     });
     socket.on('add_contact', function(contact,cur_email){
-        var exists = false;
-        var alreadyhavethatcontact=false;
         User.findOne({'username':contact}, (err,user)=>{
             if (!err){
                 if (user){
-                    exists=true;
+                    socket.exists=true;
                 }
             }
         });
@@ -437,14 +441,14 @@ io.on('connection', function(socket) {
             if (!err) {
                 if (user) {
                     
-                    if (exists){
+                    if (socket.exists){
                         user.contactList = [...user.contactList];
                         user.contactList.forEach(element => {
                             if (element.email==contact){
-                                alreadyhavethatcontact=true;
+                                socket.alreadyhavethatcontact=true;
                             }
                         });
-                        if (!alreadyhavethatcontact){
+                        if (!socket.alreadyhavethatcontact){
                             user.contactList = [...user.contactList, {"email": contact}];
                             user.save();
                             users = user.contactList;
@@ -463,7 +467,7 @@ io.on('connection', function(socket) {
         User.findOne({'username':contact}, (err,user)=>{
             if (!err) {
                 if (user) {
-                    if (exists && !alreadyhavethatcontact){
+                    if (socket.exists && !socket.alreadyhavethatcontact){
                         user.contactList = [...user.contactList, {"email": cur_email}];
                         user.save();
                         users = user.contactList;
@@ -472,6 +476,8 @@ io.on('connection', function(socket) {
                 }
             }
         });
+        socket.exists= false;
+        socket.alreadyhavethatcontact = false;
     });
 });
 
