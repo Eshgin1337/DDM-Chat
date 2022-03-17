@@ -148,10 +148,7 @@ app.get('/verify',function(req,res){
 })
 app.get('/verification/:username/:password', async function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
-        current_user = req.params.username;
-        current_user_email = req.params.username;
-        res.redirect('/chatting_page');
-        
+        res.redirect('/login');
     })
 });
 var userlist = [];
@@ -549,6 +546,8 @@ app.post('/login', function (req, res) {
                     res.render('login',{err_message:"This user is already logged in!"});
                 }
                 else{
+                    current_user = req.params.username;
+                    current_user_email = req.params.username;
                     res.redirect('/chatting_page');
                 }
             })(req, res);
