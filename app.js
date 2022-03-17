@@ -71,6 +71,9 @@ const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 
+User.collection.drop();
+Messages.collection.drop();
+Groups.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -269,7 +272,7 @@ io.on('connection', function(socket) {
     socket.on('chat_message', function(message,cur_usr,private_chat,group_chat) {
         if (!message==''){
             var t_ = new Date();
-            if (private_chat && userlist[msglist[cur_usr]]){
+            if (private_chat && userlist[msglist[cur_usr]] && !group_chat){
                 Messages.findOne({'sender':cur_usr},(err,msg)=>{
                     if (!err){
                         if (msg){
@@ -311,7 +314,7 @@ io.on('connection', function(socket) {
                 });
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
             }
-            else if (group_chat){
+            else if (group_chat && !private_chat){
                 console.log(grpmsglist, grpmsglist[cur_usr],Groups);
                 Groups.findOne({'groupName':grpmsglist[cur_usr]}, function(err,group){
                     if (!err){
