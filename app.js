@@ -71,9 +71,9 @@ const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 
-User.collection.drop();
-Messages.collection.drop();
-Groups.collection.drop();
+// User.collection.drop();
+// Messages.collection.drop();
+// Groups.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -361,13 +361,14 @@ io.on('connection', function(socket) {
                             
                         });
                         if (!socket.fff){
+                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:green">User was successfully added to the group!</strong>',socket.username)
                             group.groupMembers = [...group.groupMembers, {'email':addeduser}];  
                         }
                         else if (addeduser===adder){
-                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">Cant add yourself into a group!</strong>',socket.username)
+                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">Cant add yourself into a group!</strong>',socket.username);
                         }
                         else if (socket.fff){
-                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user is already in this group!</strong>',socket.username)
+                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user is already in this group!</strong>',socket.username);
                         }
                         group.save();  
                     }
