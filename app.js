@@ -63,6 +63,10 @@ const GroupSchema = new mongoose.Schema({
     groupMessages: Array
 });
 
+const OnlineSchema = new mongoose.Schema({
+    userName:String,
+    socketId:String
+});
 
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
@@ -70,10 +74,12 @@ userSchema.plugin(findOrCreate);
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
+const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
 // User.collection.drop();
 // Messages.collection.drop();
-// Groups.collection.drop();
+// Groups.collection.drop()
+// Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -151,12 +157,13 @@ app.get('/logout', function (req, res) {
 app.get('/verify',function(req,res){
     res.render('verify');
 })
-app.get('/verification/:username/:password', async function(req,res){
+app.get('/verification/:username/:password', function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
         res.redirect('/login');
     });
 });
 var userlist = [];
+
 var users = [];
 var groups = [];
 var msglist = [];
@@ -167,7 +174,28 @@ io.on('connection', function(socket) {
     socket.on('username', function(username) {
         var usrnme="";
         // console.log(current_user_email);
-        userlist[current_user_email] = socket.id;
+        Onlineusers.findOne({"userName":current_user_email},async function(err,onlineusers){
+            if (!err){
+                if (onlineusers){
+                    onlineusers.socketId = socket.id;
+                    userlist[onlineusers.userName] = onlineusers.socketId;
+                    // console.log(userlist);
+                    onlineusers.save();
+                }
+                else{
+                
+                    Onlineusers.create({"userName":current_user_email,"socketId":socket.id});
+                }
+                Onlineusers.find({},function(err,docs){
+                    if (!err){
+                        docs.forEach(element => {
+                            userlist[element.userName]=element.socketId;
+                        });
+                    }
+                })
+            }
+        });
+        
         for (var i=0;i<current_user.length;i++){
             if (current_user[i]=="@"){
                 current_user=usrnme;
@@ -213,6 +241,10 @@ io.on('connection', function(socket) {
                 }
             }
         });
+        Onlineusers.deleteOne({ userName: this.email }, function (err) {
+            if (err) return handleError(err);
+            // deleted at most one tank document
+          });
         io.emit('is_online', '');
     });
 
@@ -435,7 +467,6 @@ io.on('connection', function(socket) {
         User.findOne({'username':contact}, (err,user)=>{
             if (!err){
                 if (user){
-                    console.log('yes');
                     socket.exists=true;
                 }
             }
