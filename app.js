@@ -70,6 +70,8 @@ userSchema.plugin(findOrCreate);
 const User = new mongoose.model('User', userSchema);
 const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
+
+
 passport.use(User.createStrategy());
 
 passport.serializeUser(function (user, done) {
@@ -149,7 +151,7 @@ app.get('/verify',function(req,res){
 app.get('/verification/:username/:password', async function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
         res.redirect('/login');
-    })
+    });
 });
 var userlist = [];
 var users = [];
@@ -429,6 +431,7 @@ io.on('connection', function(socket) {
         User.findOne({'username':contact}, (err,user)=>{
             if (!err){
                 if (user){
+                    console.log('yes');
                     socket.exists=true;
                 }
             }
@@ -546,8 +549,6 @@ app.post('/login', function (req, res) {
                     res.render('login',{err_message:"This user is already logged in!"});
                 }
                 else{
-                    current_user = req.params.username;
-                    current_user_email = req.params.username;
                     res.redirect('/chatting_page');
                 }
             })(req, res);
