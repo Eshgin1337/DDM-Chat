@@ -245,7 +245,7 @@ io.on('connection', function(socket) {
                     }
                 }
             });
-        }, 1000); 
+        }, 100); 
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
@@ -393,56 +393,60 @@ io.on('connection', function(socket) {
                 }
             }
         });
-        if (!socket.fff){
-            Groups.findOne({'groupName':groupname}, function(err,group){
-                if (!err){
-                    if (group){
-                        
-                        group.groupMembers = [...group.groupMembers]
-                        group.groupMembers.forEach(element => {
-                            if (element.email===addeduser){
-                                socket.fff=true;
+        setTimeout(() => {
+            if (!socket.fff){
+                Groups.findOne({'groupName':groupname}, function(err,group){
+                    if (!err){
+                        if (group){
+                            
+                            group.groupMembers = [...group.groupMembers]
+                            group.groupMembers.forEach(element => {
+                                if (element.email===addeduser){
+                                    socket.fff=true;
+                                    
+                                }
                                 
+                            });
+                            if (!socket.fff){
+                                io.to(userlist[adder]).emit('chat_message', '<strong style="color:green">User was successfully added to the group!</strong>',socket.username)
+                                group.groupMembers = [...group.groupMembers, {'email':addeduser}];  
                             }
-                            
-                        });
-                        if (!socket.fff){
-                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:green">User was successfully added to the group!</strong>',socket.username)
-                            group.groupMembers = [...group.groupMembers, {'email':addeduser}];  
-                        }
-                        else if (addeduser===adder){
-                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">Cant add yourself into a group!</strong>',socket.username);
-                        }
-                        else if (socket.fff){
-                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user is already in this group!</strong>',socket.username);
-                        }
-                        group.save();  
-                    }
-                }
-            });
-        }
-        if (!socket.fff){
-            User.findOne({'username':addeduser}, function(err,user){
-                if (!err){
-                    if (user){
-                        xxx=false;
-                        user.groups = [...user.groups];
-                        user.groups.forEach(element => {
-                            if (element.groupname===groupname){
-                                xxx=true;
+                            else if (addeduser===adder){
+                                io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">Cant add yourself into a group!</strong>',socket.username);
                             }
-                        });
-                        if (xxx===false){
-                            
-                            user.groups = [...user.groups, {'groupname':groupname}];
+                            else if (socket.fff){
+                                io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user is already in this group!</strong>',socket.username);
+                            }
+                            group.save();  
                         }
-                        groups = user.groups;
-                        user.save();
-                        io.to([userlist[addeduser]]).emit('update_groups', groups);
                     }
-                }
-            });
-        }
+                });
+            }
+        }, 100); 
+        setTimeout(() => {
+            if (!socket.fff){
+                User.findOne({'username':addeduser}, function(err,user){
+                    if (!err){
+                        if (user){
+                            xxx=false;
+                            user.groups = [...user.groups];
+                            user.groups.forEach(element => {
+                                if (element.groupname===groupname){
+                                    xxx=true;
+                                }
+                            });
+                            if (xxx===false){
+                                
+                                user.groups = [...user.groups, {'groupname':groupname}];
+                            }
+                            groups = user.groups;
+                            user.save();
+                            io.to([userlist[addeduser]]).emit('update_groups', groups);
+                        }
+                    }
+                });
+            }
+        }, 200);
     socket.fff=false;
     });
 
