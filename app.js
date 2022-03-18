@@ -151,18 +151,6 @@ app.get('/chatting_page', function (req, res) {
 var userlist = [];
 app.get('/logout', function (req, res) {
     req.logout();
-    userlist[current_user_email]=false;
-        User.findOne({'username':current_user_email},(err,user)=>{
-            if (!err){
-                if (user){
-                    user.status = false;
-                    user.save();
-                }
-            }
-        });
-        Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
-            if (err) return handleError(err);
-          });
     current_user = "";
     current_user_email = "";
     res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
@@ -195,25 +183,6 @@ io.on('connection', function(socket) {
                     userlist[onlineusers.userName] = onlineusers.socketId;
                     // console.log(userlist);
                     onlineusers.save();
-                    User.findOne({'username':this.email},(err2,user)=>{
-                        if (!err2){
-                            if (user){
-                                user.status = true;
-                                user.save();
-                            }
-                        }
-                    });
-            
-                    User.findOne({'username':current_user_email}, (err2,user)=>{
-                        if (!err2) {
-                            if (user) {
-                                users = [...user.contactList];
-                                groups = [...user.groups];
-                                io.to(userlist[current_user_email]).emit('update_userlist',users);
-                                io.to(userlist[current_user_email]).emit('update_groups',groups);
-                            }
-                        }
-                    });
                 }
                 else{
                 
@@ -225,27 +194,9 @@ io.on('connection', function(socket) {
                             });
                         }
                     });
-                    User.findOne({'username':this.email},(err1,user)=>{
-                        if (!err1){
-                            if (user){
-                                user.status = true;
-                                user.save();
-                            }
-                        }
-                    });
-            
-                    User.findOne({'username':current_user_email}, (err1,user)=>{
-                        if (!err1) {
-                            if (user) {
-                                users = [...user.contactList];
-                                groups = [...user.groups];
-                                io.to(userlist[current_user_email]).emit('update_userlist',users);
-                                io.to(userlist[current_user_email]).emit('update_groups',groups);
-                            }
-                        }
-                    });
                 }
             }
+            
             checker=true;
         });
         
@@ -263,21 +214,25 @@ io.on('connection', function(socket) {
         socket.alreadyhavethatcontact = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
-    });
-    socket.on('disconnect_from_server', function(username) {
-        userlist[username]=false;
-        User.findOne({'username':username},(err,user)=>{
-            if (!err){
+        User.findOne({'username':this.email},(err1,user)=>{
+            if (!err1){
                 if (user){
-                    user.status = false;
+                    user.status = true;
                     user.save();
                 }
             }
         });
-        Onlineusers.deleteOne({ 'userName': username }, function (err) {
-            if (err) return handleError(err);
-          });
-        io.emit('reload_page', username);
+
+        User.findOne({'username':current_user_email}, (err1,user)=>{
+            if (!err1) {
+                if (user) {
+                    users = [...user.contactList];
+                    groups = [...user.groups];
+                    io.to(userlist[current_user_email]).emit('update_userlist',users);
+                    io.to(userlist[current_user_email]).emit('update_groups',groups);
+                }
+            }
+        });
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
