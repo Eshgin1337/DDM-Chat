@@ -314,16 +314,14 @@
             socket.on('reload_page', function(username){
               console.log(username,cur_email);
               if (username==cur_email){
-                window.location.replace('http://localhost:3000/login');
+                window.location.replace('http://ddm-chat.herokuapp.com/login');
               }
             });
             if (window.performance.navigation.type== window.performance.navigation.TYPE_RELOAD){
-              socket.emit('disconnect_from_server',cur_email);
-              window.location.replace('http://localhost:3000/login');
+              window.location.replace('http://ddm-chat.herokuapp.com/login');
             }
             if (window.performance.navigation.type==window.performance.navigation.TYPE_BACK_FORWARD){
-              socket.emit('disconnect_from_server',cur_email);
-              window.location.replace('http://localhost:3000/login');
+              window.location.replace('http://ddm-chat.herokuapp.com/login');
             }
     </script>
   </body>
