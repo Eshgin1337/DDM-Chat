@@ -76,10 +76,10 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-// User.collection.drop();
-// Messages.collection.drop();
-// Groups.collection.drop()
-// Onlineusers.collection.drop();
+User.collection.drop();
+Messages.collection.drop();
+Groups.collection.drop()
+Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -159,8 +159,9 @@ app.get('/verify',function(req,res){
 })
 app.get('/verification/:username/:password', function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
-        res.redirect('/login');
+        if (err) throw err;
     });
+    res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
 });
 var userlist = [];
 
@@ -184,15 +185,15 @@ io.on('connection', function(socket) {
                 }
                 else{
                 
-                    Onlineusers.create({"userName":current_user_email,"socketId":socket.id});
+                    await Onlineusers.create({"userName":current_user_email,"socketId":socket.id});
+                    Onlineusers.find({},function(err1,docs){
+                        if (!err1){
+                            docs.forEach(element => {
+                                userlist[element.userName]=element.socketId;
+                            });
+                        }
+                    });
                 }
-                Onlineusers.find({},function(err,docs){
-                    if (!err){
-                        docs.forEach(element => {
-                            userlist[element.userName]=element.socketId;
-                        });
-                    }
-                })
             }
         });
         
@@ -232,8 +233,8 @@ io.on('connection', function(socket) {
         });
     });
     socket.on('disconnect', function(username) {
-        userlist[this.email]=false;
-        User.findOne({'username':this.email},(err,user)=>{
+        userlist[current_user_email]=false;
+        User.findOne({'username':current_user_email},(err,user)=>{
             if (!err){
                 if (user){
                     user.status = false;
@@ -241,9 +242,8 @@ io.on('connection', function(socket) {
                 }
             }
         });
-        Onlineusers.deleteOne({ userName: this.email }, function (err) {
+        Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
             if (err) return handleError(err);
-            // deleted at most one tank document
           });
         io.emit('is_online', '');
     });
@@ -347,7 +347,6 @@ io.on('connection', function(socket) {
                 io.to(userlist[cur_usr]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
             }
             else if (group_chat && !private_chat){
-                console.log(grpmsglist, grpmsglist[cur_usr],Groups);
                 Groups.findOne({'groupName':grpmsglist[cur_usr]}, function(err,group){
                     if (!err){
                         if (group){
@@ -467,6 +466,7 @@ io.on('connection', function(socket) {
         User.findOne({'username':contact}, (err,user)=>{
             if (!err){
                 if (user){
+                    
                     socket.exists=true;
                 }
             }
