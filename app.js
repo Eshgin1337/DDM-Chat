@@ -32,8 +32,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
-mongoose.connect('mongodb://localhost:27017/usersDB');
+mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+// mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
@@ -441,12 +441,12 @@ io.on('connection', function(socket) {
                 }
             });
         }
-        socket.fff=false;
+    socket.fff=false;
     });
 
 
-    socket.on('add_group',function(groupname,cur_email){
-        Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
+    socket.on('add_group',async function(groupname,cur_email){
+        await Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
             if (err) throw err;
         });
         User.findOne({'username':cur_email}, function(err,user){
