@@ -311,16 +311,7 @@
                 chaecker=true;
               }
             });
-            socket.on('reload_page', function(username){
-              console.log(username,cur_email);
-              if (username==cur_email){
-                window.location.replace('http://ddm-chat.herokuapp.com/login');
-              }
-            });
             if (window.performance.navigation.type== window.performance.navigation.TYPE_RELOAD){
-              window.location.replace('http://ddm-chat.herokuapp.com/login');
-            }
-            if (window.performance.navigation.type==window.performance.navigation.TYPE_BACK_FORWARD){
               window.location.replace('http://ddm-chat.herokuapp.com/login');
             }
     </script>
