@@ -76,7 +76,10 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-
+// User.collection.drop();
+// Messages.collection.drop();
+// Groups.collection.drop()
+// Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -192,53 +195,15 @@ io.on('connection', function(socket) {
                     userlist[onlineusers.userName] = onlineusers.socketId;
                     // console.log(userlist);
                     onlineusers.save();
-                    User.findOne({'username':this.email},(err1,user)=>{
-                        if (!err1){
-                            if (user){
-                                user.status = true;
-                                user.save();
-                            }
-                        }
-                    });
-            
-                    User.findOne({'username':current_user_email}, (err1,user)=>{
-                        if (!err1) {
-                            if (user) {
-                                users = [...user.contactList];
-                                groups = [...user.groups];
-                                io.to(userlist[current_user_email]).emit('update_userlist',users);
-                                io.to(userlist[current_user_email]).emit('update_groups',groups);
-                            }
-                        }
-                    });
                 }
                 else{
                 
                     await Onlineusers.create({"userName":current_user_email,"socketId":socket.id});
-                    await Onlineusers.find({},function(err1,docs){
+                    Onlineusers.find({},function(err1,docs){
                         if (!err1){
                             docs.forEach(element => {
                                 userlist[element.userName]=element.socketId;
                             });
-                        }
-                    });
-                    User.findOne({'username':this.email},(err1,user)=>{
-                        if (!err1){
-                            if (user){
-                                user.status = true;
-                                user.save();
-                            }
-                        }
-                    });
-            
-                    User.findOne({'username':current_user_email}, (err1,user)=>{
-                        if (!err1) {
-                            if (user) {
-                                users = [...user.contactList];
-                                groups = [...user.groups];
-                                io.to(userlist[current_user_email]).emit('update_userlist',users);
-                                io.to(userlist[current_user_email]).emit('update_groups',groups);
-                            }
                         }
                     });
                 }
@@ -260,6 +225,25 @@ io.on('connection', function(socket) {
         socket.alreadyhavethatcontact = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
+        User.findOne({'username':this.email},(err,user)=>{
+            if (!err){
+                if (user){
+                    user.status = true;
+                    user.save();
+                }
+            }
+        });
+
+        User.findOne({'username':current_user_email}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    users = [...user.contactList];
+                    groups = [...user.groups];
+                    io.to(userlist[current_user_email]).emit('update_userlist',users);
+                    io.to(userlist[current_user_email]).emit('update_groups',groups);
+                }
+            }
+        });
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
