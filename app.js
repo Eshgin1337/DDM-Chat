@@ -32,8 +32,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
-// mongoose.connect('mongodb://localhost:27017/usersDB');
+// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
@@ -165,7 +165,7 @@ app.get('/logout', function (req, res) {
           });
     current_user = "";
     current_user_email = "";
-    res.redirect("/login");
+    res.send('<script>window.location.href="http://localhost:3000/login";</script>');
 })
 app.get('/verify',function(req,res){
     res.render('verify');
@@ -174,7 +174,7 @@ app.get('/verification/:username/:password', function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
         if (err) throw err;
     });
-    res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
+    res.send('<script>window.location.href="http://localhost:3000/login";</script>');
 });
 
 var users = [];
@@ -184,8 +184,9 @@ var grpmsglist = [];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 io.on('connection', function(socket) {
     
-    socket.on('username', function(username) {
+    socket.on('username',function(username) {
         var usrnme="";
+        var checker=false;
         // console.log(current_user_email);
         Onlineusers.findOne({"userName":current_user_email},async function(err,onlineusers){
             if (!err){
@@ -194,6 +195,25 @@ io.on('connection', function(socket) {
                     userlist[onlineusers.userName] = onlineusers.socketId;
                     // console.log(userlist);
                     onlineusers.save();
+                    User.findOne({'username':this.email},(err2,user)=>{
+                        if (!err2){
+                            if (user){
+                                user.status = true;
+                                user.save();
+                            }
+                        }
+                    });
+            
+                    User.findOne({'username':current_user_email}, (err2,user)=>{
+                        if (!err2) {
+                            if (user) {
+                                users = [...user.contactList];
+                                groups = [...user.groups];
+                                io.to(userlist[current_user_email]).emit('update_userlist',users);
+                                io.to(userlist[current_user_email]).emit('update_groups',groups);
+                            }
+                        }
+                    });
                 }
                 else{
                 
@@ -205,8 +225,28 @@ io.on('connection', function(socket) {
                             });
                         }
                     });
+                    User.findOne({'username':this.email},(err1,user)=>{
+                        if (!err1){
+                            if (user){
+                                user.status = true;
+                                user.save();
+                            }
+                        }
+                    });
+            
+                    User.findOne({'username':current_user_email}, (err1,user)=>{
+                        if (!err1) {
+                            if (user) {
+                                users = [...user.contactList];
+                                groups = [...user.groups];
+                                io.to(userlist[current_user_email]).emit('update_userlist',users);
+                                io.to(userlist[current_user_email]).emit('update_groups',groups);
+                            }
+                        }
+                    });
                 }
             }
+            checker=true;
         });
         
         for (var i=0;i<current_user.length;i++){
@@ -223,26 +263,21 @@ io.on('connection', function(socket) {
         socket.alreadyhavethatcontact = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
-
-        User.findOne({'username':this.email},(err,user)=>{
+    });
+    socket.on('disconnect_from_server', function(username) {
+        userlist[username]=false;
+        User.findOne({'username':username},(err,user)=>{
             if (!err){
                 if (user){
-                    user.status = true;
+                    user.status = false;
                     user.save();
                 }
             }
         });
-
-        User.findOne({'username':current_user_email}, (err,user)=>{
-            if (!err) {
-                if (user) {
-                    users = [...user.contactList];
-                    groups = [...user.groups];
-                    io.to(userlist[current_user_email]).emit('update_userlist',users);
-                    io.to(userlist[current_user_email]).emit('update_groups',groups);
-                }
-            }
-        });
+        Onlineusers.deleteOne({ 'userName': username }, function (err) {
+            if (err) return handleError(err);
+          });
+        io.emit('reload_page', username);
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
@@ -444,8 +479,8 @@ io.on('connection', function(socket) {
     });
 
 
-    socket.on('add_group', function(groupname,cur_email){
-        Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
+    socket.on('add_group',async function(groupname,cur_email){
+        await Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
             if (err) throw err;
         });
         User.findOne({'username':cur_email}, function(err,user){
@@ -554,7 +589,7 @@ app.post('/register', function (req, res) {
                         from: from,
                         to: username,
                         subject: 'EMAIL VERIFICATION',
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
                       };
                       
                       transporter.sendMail(mailOptions, function(error, info){
