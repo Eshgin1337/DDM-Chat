@@ -162,7 +162,7 @@ app.get('/verification/:username/:password', function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
         if (err) throw err;
     });
-    res.send('<script>window.location.href="http://localhost:3000/login";</script>');
+    res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
 });
 
 var users = [];
