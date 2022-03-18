@@ -381,9 +381,8 @@ io.on('connection', function(socket) {
         }
     });
 
-    socket.on('addpersontogroup',async function(groupname,addeduser,adder){
-        var ffff=false;
-        await User.findOne({'username':addeduser}, function(err,user){
+    socket.on('addpersontogroup', function(groupname,addeduser,adder){
+        User.findOne({'username':addeduser}, function(err,user){
             if (!err){
                 if (!user){
                     socket.fff=true;
@@ -405,7 +404,6 @@ io.on('connection', function(socket) {
                             
                         });
                         if (!socket.fff){
-                            ffff=true;
                             io.to(userlist[adder]).emit('chat_message', '<strong style="color:green">User was successfully added to the group!</strong>',socket.username)
                             group.groupMembers = [...group.groupMembers, {'email':addeduser}];  
                         }
@@ -420,7 +418,7 @@ io.on('connection', function(socket) {
                 }
             });
         }
-        else if (ffff==true){
+        if (!socket.fff){
         User.findOne({'username':addeduser}, function(err,user){
             if (!err){
                 if (user){
