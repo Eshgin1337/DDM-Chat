@@ -32,8 +32,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
-// mongoose.connect('mongodb://localhost:27017/usersDB');
+// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
@@ -151,6 +151,18 @@ app.get('/chatting_page', function (req, res) {
 var userlist = [];
 app.get('/logout', function (req, res) {
     req.logout();
+    userlist[current_user_email]=false;
+        User.findOne({'username':current_user_email},(err,user)=>{
+            if (!err){
+                if (user){
+                    user.status = false;
+                    user.save();
+                }
+            }
+        });
+        Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
+            if (err) return handleError(err);
+          });
     current_user = "";
     current_user_email = "";
     res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
@@ -183,6 +195,25 @@ io.on('connection', function(socket) {
                     userlist[onlineusers.userName] = onlineusers.socketId;
                     // console.log(userlist);
                     onlineusers.save();
+                    User.findOne({'username':this.email},(err2,user)=>{
+                        if (!err2){
+                            if (user){
+                                user.status = true;
+                                user.save();
+                            }
+                        }
+                    });
+            
+                    User.findOne({'username':current_user_email}, (err2,user)=>{
+                        if (!err2) {
+                            if (user) {
+                                users = [...user.contactList];
+                                groups = [...user.groups];
+                                io.to(userlist[current_user_email]).emit('update_userlist',users);
+                                io.to(userlist[current_user_email]).emit('update_groups',groups);
+                            }
+                        }
+                    });
                 }
                 else{
                 
@@ -194,9 +225,27 @@ io.on('connection', function(socket) {
                             });
                         }
                     });
+                    User.findOne({'username':this.email},(err1,user)=>{
+                        if (!err1){
+                            if (user){
+                                user.status = true;
+                                user.save();
+                            }
+                        }
+                    });
+            
+                    User.findOne({'username':current_user_email}, (err1,user)=>{
+                        if (!err1) {
+                            if (user) {
+                                users = [...user.contactList];
+                                groups = [...user.groups];
+                                io.to(userlist[current_user_email]).emit('update_userlist',users);
+                                io.to(userlist[current_user_email]).emit('update_groups',groups);
+                            }
+                        }
+                    });
                 }
             }
-            
             checker=true;
         });
         
@@ -214,25 +263,21 @@ io.on('connection', function(socket) {
         socket.alreadyhavethatcontact = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
-        User.findOne({'username':this.email},(err1,user)=>{
-            if (!err1){
+    });
+    socket.on('disconnect_from_server', function(username) {
+        userlist[username]=false;
+        User.findOne({'username':username},(err,user)=>{
+            if (!err){
                 if (user){
-                    user.status = true;
+                    user.status = false;
                     user.save();
                 }
             }
         });
-
-        User.findOne({'username':current_user_email}, (err1,user)=>{
-            if (!err1) {
-                if (user) {
-                    users = [...user.contactList];
-                    groups = [...user.groups];
-                    io.to(userlist[current_user_email]).emit('update_userlist',users);
-                    io.to(userlist[current_user_email]).emit('update_groups',groups);
-                }
-            }
-        });
+        Onlineusers.deleteOne({ 'userName': username }, function (err) {
+            if (err) return handleError(err);
+          });
+        io.emit('reload_page', username);
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
@@ -544,7 +589,7 @@ app.post('/register', function (req, res) {
                         from: from,
                         to: username,
                         subject: 'EMAIL VERIFICATION',
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
                       };
                       
                       transporter.sendMail(mailOptions, function(error, info){
