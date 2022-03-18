@@ -247,6 +247,21 @@ io.on('connection', function(socket) {
             });
         }, 100); 
     });
+    socket.on('disconnect_from_server', function(username) {
+        userlist[username]=false;
+        User.findOne({'username':username},(err,user)=>{
+            if (!err){
+                if (user){
+                    user.status = false;
+                    user.save();
+                }
+            }
+        });
+        Onlineusers.deleteOne({ 'userName': username }, function (err) {
+            if (err) return handleError(err);
+          });
+        io.emit('reload_page', username);
+    });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
         User.findOne({'username':current_user_email},(err,user)=>{
