@@ -76,10 +76,10 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-// User.collection.drop();
-// Messages.collection.drop();
-// Groups.collection.drop()
-// Onlineusers.collection.drop();
+User.collection.drop();
+Messages.collection.drop();
+Groups.collection.drop()
+Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -151,7 +151,9 @@ app.get('/chatting_page', function (req, res) {
 
 app.get('/logout', function (req, res) {
     req.logout();
+
     current_user = "";
+    current_user_email = "";
     res.redirect("/login");
 })
 app.get('/verify',function(req,res){
