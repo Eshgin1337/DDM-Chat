@@ -225,25 +225,27 @@ io.on('connection', function(socket) {
         socket.alreadyhavethatcontact = false;
         usernm = current_user;
         io.emit('is_online', socket.username,current_user_email);
-        User.findOne({'username':this.email},(err,user)=>{
-            if (!err){
-                if (user){
-                    user.status = true;
-                    user.save();
+        setTimeout(() => {
+            User.findOne({'username':this.email},(err,user)=>{
+                if (!err){
+                    if (user){
+                        user.status = true;
+                        user.save();
+                    }
                 }
-            }
-        });
-
-        User.findOne({'username':current_user_email}, (err,user)=>{
-            if (!err) {
-                if (user) {
-                    users = [...user.contactList];
-                    groups = [...user.groups];
-                    io.to(userlist[current_user_email]).emit('update_userlist',users);
-                    io.to(userlist[current_user_email]).emit('update_groups',groups);
+            });
+    
+            User.findOne({'username':current_user_email}, (err,user)=>{
+                if (!err) {
+                    if (user) {
+                        users = [...user.contactList];
+                        groups = [...user.groups];
+                        io.to(userlist[current_user_email]).emit('update_userlist',users);
+                        io.to(userlist[current_user_email]).emit('update_groups',groups);
+                    }
                 }
-            }
-        });
+            });
+        }, 1000); 
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;
