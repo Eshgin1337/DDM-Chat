@@ -32,8 +32,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
-mongoose.connect('mongodb://localhost:27017/usersDB');
+mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+// mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
@@ -165,7 +165,7 @@ app.get('/logout', function (req, res) {
           });
     current_user = "";
     current_user_email = "";
-    res.send('<script>window.location.href="http://localhost:3000/login";</script>');
+    res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
 })
 app.get('/verify',function(req,res){
     res.render('verify');
@@ -589,7 +589,7 @@ app.post('/register', function (req, res) {
                         from: from,
                         to: username,
                         subject: 'EMAIL VERIFICATION',
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
                       };
                       
                       transporter.sendMail(mailOptions, function(error, info){
