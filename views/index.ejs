@@ -8,19 +8,19 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font: 13px Helvetica, Arial; font-size: 1vw;}
-        #frm3 #em { border-style: solid;position:absolute;bottom: 30%;left:20%; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
-        #frm3 #create_group { border-style: solid; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; }
-        #frm3 button { background: rgb(130, 224, 0); position:absolute;bottom:29.5%;left:67.7%; padding: 3%;height:5vh; border-radius: 10%;font-size:1vw;}
-        #form1 input { border-style: solid;position:fixed;bottom: 1%; border-width: 1px; padding: 1%; width: 38%;height: 6%; margin-right: .5%; border-radius: 2%;}
-        #form1 button {font-size: large;width: 10%; background: rgb(130, 224, 255); position:fixed;bottom:1%;left:58.7%; padding: 1%;height:6%; border-radius: 10%;}
+        #form2 #em { border-style: solid;position:absolute;bottom: 35%;left:20%; border-width: 1%; padding: 3%; width: 17vw;height: 1.2vh; margin-right: .5%; }
+        /* #frm3 #create_group { border-style: solid; border-width: 1%; padding: 3%; width: 14vw;height: 1.2vh; margin-right: .5%; } */
+        #form2 #btn1 { background: rgb(130, 224, 0); position:absolute;bottom:35%;left:67.7%; padding: 3%;height:5vh; border-radius: 10%;font-size:1vw;}
+        #form1 input { border-style: solid;position:fixed;bottom: 1%; border-width: 1px; padding: 1%; width: 64%;height: 6%; margin-right: .5%; border-radius: 2%;}
+        #form1 button {font-size: large;width: 10%; background: rgb(130, 224, 255); position:fixed;bottom:1%;left:84.7%; padding: 1%;height:6%; border-radius: 10%;}
         #frm2dv1 {position: relative; height:5vh;}
         #frm2dv2 {position: relative;top:50%; height: 5vh;}
-        #frm3 #form3 { position:relative;top:70%; margin-right: .5%; }
+        /* #frm3 #form3 { position:relative;top:70%; margin-right: .5%; } */
         #messages {list-style-type: none; margin: 0%; padding: 0%; }
-        #messages li {padding: 6%; }
+        #messages li {padding: 4%; }
         #frm{
           margin-left: 20.5%;
-          width: 48%;
+          width: 74%;
         }
         #frm2{
           position:fixed;
@@ -34,9 +34,9 @@
           position:fixed;
           top: 0%;
           right:0%;
-          width:31%;
+          width:5%;
           bottom: 0%;
-          background:yellow;
+          background:lightblue;
           border-left:solid black 2px;
         }
         #users{
@@ -65,10 +65,18 @@
         #groups li:hover{
           background-color: lightblue;
         }
-        
+        .swal-button1 {
+          background-color: lightcoral;
+          }
+          .swal-button2 {
+          background-color: rgb(130, 224, 0);
+          }
     </style>
     <script src="../../socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+
+
   </head>
   <body>
     <div id="frm2">
@@ -91,24 +99,25 @@
       </form>
     </div>
     <div id="frm3"> 
-      <form id='form2'>
-        <br>
-        <h1 style="position:absolute;left:10%;color:red; margin-left: 17%;"><%- username %></h1>
-        <br>
-        <!-- <input name="tag" id='tag' autocomplete="off" autofocus="on" type="text" placeholder="Type the tagname of the contact" /> -->
+      <input onclick="showProfile()" title="Your Profile" style="position:relative;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/1077/1077012.png" />
+      <input onclick="showAddContact()" title="Add Contact" style="position:relative;top:10%;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/3579/3579045.png" />
+      <input onclick="showAddGroup()" title="Create a new group" style="position:relative;top:25%;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons.flaticon.com/png/128/3660/premium/3660732.png?token=exp=1647619752~hmac=fa7340fac2face402090a59bbaf6e5b4" />
+      <form action="/logout" method="get" style="position:absolute;bottom:10%;">
+        <input title="LogOut" style="position:relative;bottom:0%;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons.flaticon.com/png/512/1082/premium/1082434.png?token=exp=1647613869~hmac=055499b17994ab86263acd6a0f3eae98" />
+        <!-- <button type="submit" style="position:absolute;top:2%;background-color:aqua">logout</button> -->
+      </form>
+      
+      <!-- <form id='form2'>
         <input name="em" id='em' autocomplete="off" type="text" placeholder="Type the email" />
         <button id="btn1" onclick="addContact()">add contact</button>
-      </form>
-      <form action="/logout" method="get">
-        <button type="submit" style="position:absolute;top:2%;background-color:aqua">logout</button>
-      </form>
-      <form id="form3">
+      </form> -->
+      <!-- <form id="form3">
         <h1>Create Group</h1>
         <br>
         <label for="create_group">Group Name</label>
         <input name="create_group" id="create_group">
         <button id="btn1" onclick="addGroup()" type="submit" style="position: absolute;top:60%; background-color:lightcoral">Create_Group</button>
-      </form>
+      </form> -->
     </div>
 
     <script>
@@ -125,6 +134,71 @@
             var privatecht = false;
             var groupcht = false;
             var cur_email="";
+            var span = document.createElement("span");
+            var addcontactform = document.createElement("form");
+            var addgroupform = document.createElement("form");
+            addcontactform.id="form2";
+            addgroupform.id="form3";
+            function simulateClick(x, y) {
+                jQuery(document.elementFromPoint(x, y)).click();
+            }
+            addcontactform.onsubmit = (e)=>{
+              e.preventDefault();
+              simulateClick(0,0);
+              addContact();
+            }
+            addgroupform.onsubmit = (e)=>{
+              e.preventDefault();
+              simulateClick(0,0);
+              addGroup();
+            }
+            addcontactform.innerHTML = `<input name="em" id='em' autocomplete="off" type="text" placeholder="Type the email" />`
+            addgroupform.innerHTML = `<label for="create_group">Group Name</label><input name="create_group" id="create_group"/>`;
+            function showProfile(){
+              swal({
+                title:"User Profile",
+                content:span,
+                icon:"info",
+                
+              })
+              
+            };
+            function showAddContact(){
+              swal({
+                title:"Contact Add Form",
+                content:addcontactform,
+                allowEnterKey: true,
+                buttons: {
+                  cancel:true,
+                  // confirm:true,
+                  add: {text:"Add Contact!",className:"swal-button2"},
+                  // allowEnterKey: true,
+                  
+                },
+                })
+                .then(usertoadd=>{
+                  if (usertoadd){
+                    addContact();
+                  }
+                });
+            }
+            function showAddGroup(){
+              swal({
+                title:"Create Group Form",
+                content:addgroupform,
+                confirmButtonColor: 'lightcoral',
+                cancelButtonText: 'Cancel',
+                buttons: {
+                  cancel:true,
+                  add:{text: "Create Group!",className:"swal-button1"},
+                  },
+                })
+                .then(grouptoadd=>{
+                  if (grouptoadd){
+                    addGroup();
+                  }
+                });
+            }
             function Ascending_sort(a, b) {
               console.log(b.sendDate,a.sendDate,b.sendDate>a.sendDate);
                       return (b.sendDate >
@@ -132,11 +206,9 @@
                   }
             $('#form2').submit(function(e){
               e.preventDefault();
-              $('#em').val('');
             });
             $('#form3').submit(function(e){
               e.preventDefault();
-              $('#create_group').val('');
             });
             $('#form1').submit(function(e){
                 e.preventDefault(); 
@@ -219,9 +291,14 @@
               document.getElementById('users').innerHTML = html;
             });
             function addGroup(){
-              grouplist.push($("#create_group").val());
-              socket.emit('add_group', $('#create_group').val(),cur_email);
-              
+              if ($("#create_group").val()!=""){
+                grouplist.push($("#create_group").val());
+                socket.emit('add_group', $('#create_group').val(),cur_email);
+              }
+              else{
+                $('#messages').append($('<li style="color:red;border:solid black 2px;">').html("Please type the group name!"));
+                  $('#messages').append($('<li>').html(""));
+              }
             }
             function addpersontogroup(groupname){
               console.log(groupname);
@@ -229,7 +306,11 @@
               socket.emit('addpersontogroup',groupname,addeduser,cur_email);
             }
             function addContact(){
-              if ($("#em").val()==cur_email){
+              if ($("#em").val()==""){
+                $('#messages').append($('<li style="color:red;border:solid black 2px;">').html("Please type the contact name!"));
+                  $('#messages').append($('<li>').html(""));
+              }
+              else if ($("#em").val()==cur_email){
                 $("#messages").append($('<li style="color:black;border:solid black 2px;">').html('Cannot add yourself to contactlist!'));
                 $('#messages').append($('<li>').html(""));
               }
@@ -308,12 +389,18 @@
               if (chaecker==false){
                 cur_email = cur_em;
                 cur_usr = username;
+                span.innerHTML = `<strong>email:</strong>${cur_email}\n<strong>username:</strong>${cur_usr}`;
                 chaecker=true;
               }
             });
-            if (window.performance.navigation.type== window.performance.navigation.TYPE_RELOAD){
-              window.location.replace('http://ddm-chat.herokuapp.com/login');
+            if (window.performance.navigation.type== window.performance.navigation.TYPE_RELOAD || window.performance.navigation.type== window.performance.navigation.TYPE_BACK_FORWARD){
+              socket.emit('disconnect_from_server', cur_email);
+              setTimeout(() => {
+                window.location.replace('http://ddm-chat.herokuapp.com/login');
+                // window.location.replace('http://localhost:3000/login');
+              }, 1000);  
             }
+            
     </script>
   </body>
 </html>

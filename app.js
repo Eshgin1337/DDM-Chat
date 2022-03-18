@@ -76,7 +76,10 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-
+// User.collection.drop();
+// Messages.collection.drop();
+// Groups.collection.drop()
+// Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -574,7 +577,8 @@ app.post('/register', function (req, res) {
                         to: username,
                         subject: 'EMAIL VERIFICATION',
                         html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
-                      };
+                        //    html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
+                        };
                       
                       transporter.sendMail(mailOptions, function(error, info){
                         if (error) {
