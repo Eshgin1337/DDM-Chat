@@ -592,12 +592,18 @@ app.post('/login', function (req, res) {
                 if (!user){
                     res.render('login',{err_message:"Invalid Login credentials!"});
                 }
-                else if (userlist[current_user_email] || userlist[current_user_email]!=false){
-                    res.render('login',{err_message:"This user is already logged in!"});
-                }
-                else{
-                    res.redirect('/chatting_page');
-                }
+                Onlineusers.findOne({"userName":current_user_email},function(err,onlineusers){
+                    if (!err){
+                        if (onlineusers){
+                                res.render('login',{err_message:"This user is already logged in!"});
+                        }
+                        else{
+                            res.redirect('/chatting_page');
+                        }
+                    }
+                });
+                
+                
             })(req, res);
         }
     })
