@@ -406,6 +406,26 @@ io.on('connection', function(socket) {
                         if (!socket.fff){
                             io.to(userlist[adder]).emit('chat_message', '<strong style="color:green">User was successfully added to the group!</strong>',socket.username)
                             group.groupMembers = [...group.groupMembers, {'email':addeduser}];  
+                            User.findOne({'username':addeduser}, function(err1,user){
+                                if (!err1){
+                                    if (user){
+                                        xxx=false;
+                                        user.groups = [...user.groups];
+                                        user.groups.forEach(element => {
+                                            if (element.groupname===groupname){
+                                                xxx=true;
+                                            }
+                                        });
+                                        if (xxx===false){
+                                            
+                                            user.groups = [...user.groups, {'groupname':groupname}];
+                                        }
+                                        groups = user.groups;
+                                        user.save();
+                                        io.to([userlist[addeduser]]).emit('update_groups', groups);
+                                    }
+                                }
+                            });
                         }
                         else if (addeduser===adder){
                             io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">Cant add yourself into a group!</strong>',socket.username);
@@ -418,28 +438,7 @@ io.on('connection', function(socket) {
                 }
             });
         }
-        if (!socket.fff){
-        User.findOne({'username':addeduser}, function(err,user){
-            if (!err){
-                if (user){
-                    xxx=false;
-                    user.groups = [...user.groups];
-                    user.groups.forEach(element => {
-                        if (element.groupname===groupname){
-                            xxx=true;
-                        }
-                    });
-                    if (xxx===false){
-                        
-                        user.groups = [...user.groups, {'groupname':groupname}];
-                    }
-                    groups = user.groups;
-                    user.save();
-                    io.to([userlist[addeduser]]).emit('update_groups', groups);
-                }
-            }
-        });
-    }
+        
     socket.fff=false;
     });
 
