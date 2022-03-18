@@ -148,10 +148,21 @@ app.get('/chatting_page', function (req, res) {
     }
     res.render('index.ejs', {username: current_user});
 });
-
+var userlist = [];
 app.get('/logout', function (req, res) {
     req.logout();
-
+    userlist[current_user_email]=false;
+        User.findOne({'username':current_user_email},(err,user)=>{
+            if (!err){
+                if (user){
+                    user.status = false;
+                    user.save();
+                }
+            }
+        });
+        Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
+            if (err) return handleError(err);
+          });
     current_user = "";
     current_user_email = "";
     res.redirect("/login");
@@ -165,7 +176,6 @@ app.get('/verification/:username/:password', function(req,res){
     });
     res.send('<script>window.location.href="http://ddm-chat.herokuapp.com/login";</script>');
 });
-var userlist = [];
 
 var users = [];
 var groups = [];
