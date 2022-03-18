@@ -76,10 +76,7 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-// User.collection.drop();
-// Messages.collection.drop();
-// Groups.collection.drop()
-// Onlineusers.collection.drop();
+
 
 passport.use(User.createStrategy());
 
