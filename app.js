@@ -562,7 +562,7 @@ app.post('/register', function (req, res) {
                 if (user) {
                     res.render('register', {err_message:"This user already exists!"});
                 }
-                if (!user){
+                else if (!user){
                     var transporter = nodemailer.createTransport({
                         service: 'gmail',
                         auth: {
