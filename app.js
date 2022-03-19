@@ -76,10 +76,10 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-// User.collection.drop();
-// Messages.collection.drop();
-// Groups.collection.drop()
-// Onlineusers.collection.drop();
+User.collection.drop();
+Messages.collection.drop();
+Groups.collection.drop()
+Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -260,7 +260,6 @@ io.on('connection', function(socket) {
         Onlineusers.deleteOne({ 'userName': username }, function (err) {
             if (err) return handleError(err);
           });
-        io.emit('reload_page', username);
     });
     socket.on('disconnect', function(username) {
         userlist[current_user_email]=false;

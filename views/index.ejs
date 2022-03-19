@@ -388,7 +388,7 @@
                 // window.location.replace('http://localhost:3000/login');
               }, 100);  
             }
-            window.addEventListener('beforeunload', ()=>{
+            window.addEventListener('unload', ()=>{
               socket.emit('disconnect_from_server',cur_email);
             });
             
