@@ -386,8 +386,11 @@
               setTimeout(() => {
                 window.location.replace('http://ddm-chat.herokuapp.com/login');
                 // window.location.replace('http://localhost:3000/login');
-              }, 1000);  
+              }, 100);  
             }
+            window.addEventListener('beforeunload', ()=>{
+              socket.emit('disconnect_from_server',cur_email);
+            });
             
     </script>
   </body>
