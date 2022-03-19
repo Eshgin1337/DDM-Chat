@@ -262,8 +262,8 @@ io.on('connection', function(socket) {
           });
     });
     socket.on('disconnect', function(username) {
-        userlist[current_user_email]=false;
-        User.findOne({'username':current_user_email},(err,user)=>{
+        userlist[username]=false;
+        User.findOne({'username':username},(err,user)=>{
             if (!err){
                 if (user){
                     user.status = false;
@@ -271,7 +271,7 @@ io.on('connection', function(socket) {
                 }
             }
         });
-        Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
+        Onlineusers.deleteOne({ 'userName': username }, function (err) {
             if (err) return handleError(err);
           });
         io.emit('is_online', '');
