@@ -249,17 +249,21 @@ io.on('connection', function(socket) {
     });
     socket.on('disconnect_from_server', function(username) {
         userlist[username]=false;
-        User.findOne({'username':username},(err,user)=>{
-            if (!err){
-                if (user){
-                    user.status = false;
-                    user.save();
+        setTimeout(() => {
+            User.findOne({'username':username},(err,user)=>{
+                if (!err){
+                    if (user){
+                        user.status = false;
+                        user.save();
+                    }
                 }
-            }
-        });
-        Onlineusers.deleteOne({ 'userName': username }, function (err) {
-            if (err) return handleError(err);
-          });
+            });
+        }, 100); 
+        setTimeout(() => {
+            Onlineusers.deleteOne({ 'userName': username }, function (err) {
+                if (err) return handleError(err);
+              });
+        }, 200); 
     });
     socket.on('disconnect', function(username) {
         // console.log('yesdisconnected',current_user_email);
@@ -473,9 +477,18 @@ io.on('connection', function(socket) {
 
 
     socket.on('add_group',async function(groupname,cur_email){
-        await Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
-            if (err) throw err;
-        });
+        await Groups.findOne({"groupName":groupname}, function(err,group){
+            if (!err){
+                if (group){
+                    io.to(userlist[cur_email]).emit('chatting_page', '<strong style="color:purple">Group with that name already exists!\nPlease enter another groupname!</strong>',socket.username);
+                }
+                else if (!group){
+                    Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
+                        if (err) throw err;
+                    });
+                }
+            }
+        }); 
         User.findOne({'username':cur_email}, function(err,user){
             if (!err){
                 if (user){
@@ -486,10 +499,7 @@ io.on('connection', function(socket) {
                             xxx=true;
                         }
                     });
-                    if (xxx===true){
-                        user.groups = [...user.groups, {'groupname':groupname+`${randomInt(9)}`}];
-                    }
-                    else{
+                    if (xxx!==true){
                         user.groups = [...user.groups, {'groupname':groupname}];
                     }
                     groups = user.groups;
@@ -511,47 +521,52 @@ io.on('connection', function(socket) {
                 }
             }
         });
-        User.findOne({'username':cur_email}, (err,user)=>{
-            if (!err) {
-                if (user) {
-                    
-                    if (socket.exists){
-                        user.contactList = [...user.contactList];
-                        user.contactList.forEach(element => {
-                            if (element.email==contact){
-                                socket.alreadyhavethatcontact=true;
+        setTimeout(() => {
+            User.findOne({'username':cur_email}, (err,user)=>{
+                if (!err) {
+                    if (user) {
+                        
+                        if (socket.exists){
+                            user.contactList = [...user.contactList];
+                            user.contactList.forEach(element => {
+                                if (element.email==contact){
+                                    socket.alreadyhavethatcontact=true;
+                                }
+                            });
+                            if (!socket.alreadyhavethatcontact){
+                                user.contactList = [...user.contactList, {"email": contact}];
+                                user.save();
+                                users = user.contactList;
+                                io.to(userlist[cur_email]).emit('update_userlist',users);
                             }
-                        });
-                        if (!socket.alreadyhavethatcontact){
-                            user.contactList = [...user.contactList, {"email": contact}];
-                            user.save();
-                            users = user.contactList;
-                            io.to(userlist[cur_email]).emit('update_userlist',users);
+                            else{
+                                io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:lightblue">Already have that contact!</strong>',socket.username);
+                            }
                         }
                         else{
-                            io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:lightblue">Already have that contact!</strong>',socket.username);
+                            io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:orange">Such user doesnt exist!</strong>',socket.username);
                         }
                     }
-                    else{
-                        io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:orange">Such user doesnt exist!</strong>',socket.username);
+                }
+            });
+        }, 100); 
+        setTimeout(() => {
+            User.findOne({'username':contact}, (err,user)=>{
+                if (!err) {
+                    if (user) {
+                        if (socket.exists && !socket.alreadyhavethatcontact){
+                            user.contactList = [...user.contactList, {"email": cur_email}];
+                            user.save();
+                            users = user.contactList;
+                            io.to(userlist[contact]).emit('update_userlist',users);
+                        }
                     }
                 }
-            }
-        });
-        User.findOne({'username':contact}, (err,user)=>{
-            if (!err) {
-                if (user) {
-                    if (socket.exists && !socket.alreadyhavethatcontact){
-                        user.contactList = [...user.contactList, {"email": cur_email}];
-                        user.save();
-                        users = user.contactList;
-                        io.to(userlist[contact]).emit('update_userlist',users);
-                    }
-                }
-            }
-        });
-        socket.exists= false;
-        socket.alreadyhavethatcontact = false;
+            });
+            socket.exists= false;
+            socket.alreadyhavethatcontact = false;
+        }, 200); 
+        
     });
 });
 
