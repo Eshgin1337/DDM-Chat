@@ -477,17 +477,8 @@ io.on('connection', function(socket) {
 
 
     socket.on('add_group',async function(groupname,cur_email){
-        await Groups.findOne({"groupName":groupname}, function(err,group){
-            if (!err){
-                if (group){
-                    io.to(userlist[cur_email]).emit('chatting_page', '<strong style="color:purple">Group with that name already exists!\nPlease enter another groupname!</strong>',socket.username);
-                }
-                else if (!group){
-                    Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
-                        if (err) throw err;
-                    });
-                }
-            }
+        await Groups.create({"groupName":groupname,"groupAdmin":cur_email}, function(err,groupName,groupAdmin){
+            if (err) throw err;
         }); 
         User.findOne({'username':cur_email}, function(err,user){
             if (!err){
@@ -499,13 +490,16 @@ io.on('connection', function(socket) {
                             xxx=true;
                         }
                     });
-                    if (xxx===false){
-                        user.groups = [...user.groups, {'groupname':groupname}];
-                        groups = user.groups;
-                        user.save();
-                    
-                        io.to([userlist[cur_email]]).emit('update_groups', groups);
+                    if (xxx===true){
+                        user.groups = [...user.groups, {'groupname':groupname+`${randomInt(9)}`}];
                     }
+                    else{
+                        user.groups = [...user.groups, {'groupname':groupname}];
+                    }
+                    groups = user.groups;
+                    user.save();
+                    
+                    io.to([userlist[cur_email]]).emit('update_groups', groups);
                     
                 }
             }
