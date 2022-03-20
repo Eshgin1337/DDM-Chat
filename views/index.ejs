@@ -264,7 +264,7 @@
               var html='';
               data.forEach(element => {
                 html+='<li onclick="ongroupselect(this.innerHTML,this)">'+element.groupname+`</li>`;
-                html+=`<button onclick="addpersontogroup('${element.groupname}')" style="margin-left:0%;">Add Person+</button>`;
+                html+=`<button onclick="addpersontogroup('${element.groupname}')" style="margin-left:0%;">Add Person+</button><br><hr>`;
               });
               document.getElementById('groups').innerHTML = html;
             });
@@ -289,7 +289,6 @@
               }
             }
             function addpersontogroup(groupname){
-              console.log(groupname);
               var addeduser = prompt('Please type the email of a person to add to the group!','');
               socket.emit('addpersontogroup',groupname,addeduser,cur_email);
             }

@@ -262,19 +262,26 @@ io.on('connection', function(socket) {
           });
     });
     socket.on('disconnect', function(username) {
+        // console.log('yesdisconnected',current_user_email);
         userlist[current_user_email]=false;
-        User.findOne({'username':current_user_email},(err,user)=>{
-            if (!err){
-                if (user){
-                    user.status = false;
-                    user.save();
+        setTimeout(() => {
+            User.findOne({'username':current_user_email},(err,user)=>{
+                if (!err){
+                    if (user){
+                        user.status = false;
+                        user.save();
+                    }
                 }
-            }
-        });
-        Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
-            if (err) return handleError(err);
-          });
-        io.emit('is_online', '');
+            });
+        }, 100); 
+        setTimeout(() => {
+            Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
+                if (err) return handleError(err);
+              });
+        }, 200); 
+        setTimeout(() => {
+            io.emit('is_online', '');
+        }, 300); 
     });
 
     socket.on('group_chat', function(groupname,sender){
