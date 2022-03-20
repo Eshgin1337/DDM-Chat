@@ -521,7 +521,6 @@ io.on('connection', function(socket) {
                 }
             }
         });
-        setTimeout(() => {
             User.findOne({'username':cur_email}, (err,user)=>{
                 if (!err) {
                     if (user) {
@@ -549,8 +548,6 @@ io.on('connection', function(socket) {
                     }
                 }
             });
-        }, 100); 
-        setTimeout(() => {
             User.findOne({'username':contact}, (err,user)=>{
                 if (!err) {
                     if (user) {
@@ -565,7 +562,6 @@ io.on('connection', function(socket) {
             });
             socket.exists= false;
             socket.alreadyhavethatcontact = false;
-        }, 200); 
         
     });
 });
