@@ -499,13 +499,14 @@ io.on('connection', function(socket) {
                             xxx=true;
                         }
                     });
-                    if (xxx!==true){
+                    if (xxx===false){
                         user.groups = [...user.groups, {'groupname':groupname}];
-                    }
-                    groups = user.groups;
-                    user.save();
+                        groups = user.groups;
+                        user.save();
                     
-                    io.to([userlist[cur_email]]).emit('update_groups', groups);
+                        io.to([userlist[cur_email]]).emit('update_groups', groups);
+                    }
+                    
                 }
             }
         });
