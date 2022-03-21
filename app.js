@@ -15,6 +15,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
 const nodemailer = require('nodemailer');
 const { randomInt } = require('crypto');
+const { use } = require('passport');
 var current_user = '';
 var current_user_email = '';
 var usernm = "";
@@ -40,6 +41,7 @@ const userSchema = new mongoose.Schema({
     password: String,
     status: Boolean,
     googleId: String,
+    mailList: Array,
     contactList: Array,
     blokcedContacts: Array,
     groups: Array
@@ -179,6 +181,7 @@ app.get('/verification/:username/:password', function(req,res){
 
 var users = [];
 var groups = [];
+var mails = [];
 var msglist = [];
 var grpmsglist = [];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -224,6 +227,7 @@ io.on('connection', function(socket) {
         socket.exists = false;
         socket.alreadyhavethatcontact = false;
         usernm = current_user;
+        var mails = [];
         io.emit('is_online', socket.username,current_user_email);
         setTimeout(() => {
             User.findOne({'username':this.email},(err,user)=>{
@@ -240,6 +244,8 @@ io.on('connection', function(socket) {
                     if (user) {
                         users = [...user.contactList];
                         groups = [...user.groups];
+                        mails = [...user.mailList];
+                        io.to(userlist[current_user_email]).emit('update_mails',mails);
                         io.to(userlist[current_user_email]).emit('update_userlist',users);
                         io.to(userlist[current_user_email]).emit('update_groups',groups);
                     }
@@ -507,7 +513,7 @@ io.on('connection', function(socket) {
         
         
     });
-    socket.on('add_contact', function(contact,cur_email){
+    socket.on('send_friend_request', function(contact,cur_email){
         User.findOne({'username':contact}, (err,user)=>{
             if (!err){
                 if (user){
@@ -516,47 +522,109 @@ io.on('connection', function(socket) {
                 }
             }
         });
-            User.findOne({'username':cur_email}, (err,user)=>{
-                if (!err) {
-                    if (user) {
-                        
-                        if (socket.exists){
-                            user.contactList = [...user.contactList];
-                            user.contactList.forEach(element => {
-                                if (element.email==contact){
-                                    socket.alreadyhavethatcontact=true;
-                                }
-                            });
-                            if (!socket.alreadyhavethatcontact){
-                                user.contactList = [...user.contactList, {"email": contact}];
-                                user.save();
-                                users = user.contactList;
-                                io.to(userlist[cur_email]).emit('update_userlist',users);
+        User.findOne({'username':cur_email}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    
+                    if (socket.exists){
+                        user.contactList = [...user.contactList];
+                        user.contactList.forEach(element => {
+                            if (element.email==contact){
+                                socket.alreadyhavethatcontact=true;
                             }
-                            else{
-                                io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:lightblue">Already have that contact!</strong>',socket.username);
-                            }
+                        });
+                        if (!socket.alreadyhavethatcontact){
+                            User.findOne({'username':contact},(err1,user1)=>{
+                                user1.mailList = [...user1.mailList, {"sentfrom":cur_email, "sentto":contact,"request":"friend"}];
+                                user1.save();
+                                setTimeout(() => {
+                                    io.to(userlist[contact]).emit('update_mails', user1.mailList);
+                                }, 100); 
+                            })
+                            
+                            setTimeout(() => {
+                                io.to(userlist[cur_email]).emit('chat_message', `<strong style="color:lightgreen">friend request was successfully sent to ${contact}</strong>`,socket.username);
+                            }, 100); 
+                            
+                            // user.contactList = [...user.contactList, {"email": contact}];
+                            // user.save();
+                            // users = user.contactList;
+                            // io.to(userlist[cur_email]).emit('update_userlist',users);
                         }
                         else{
-                            io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:orange">Such user doesnt exist!</strong>',socket.username);
+                            io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:lightblue">Already have that contact!</strong>',socket.username);
                         }
                     }
-                }
-            });
-            User.findOne({'username':contact}, (err,user)=>{
-                if (!err) {
-                    if (user) {
-                        if (socket.exists && !socket.alreadyhavethatcontact){
-                            user.contactList = [...user.contactList, {"email": cur_email}];
-                            user.save();
-                            users = user.contactList;
-                            io.to(userlist[contact]).emit('update_userlist',users);
-                        }
+                    else{
+                        io.to(userlist[cur_email]).emit('chat_message', '<strong style="color:orange">Such user doesnt exist!</strong>',socket.username);
                     }
                 }
-            });
+            }
             socket.exists= false;
             socket.alreadyhavethatcontact = false;
+        });
+    });
+    socket.on('deny_the_request', function(contact,cur_email){
+        io.to(userlist[cur_email]).emit('chat_message', `<strong style="color:purple">${contact} has denied your friend request!</strong>`,socket.username)
+        User.findOne({'username':contact}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    mails=[];
+                    user.mailList.forEach(element => {
+                        if (!(element.sentto==contact && element.sentfrom==cur_email)){
+                            mails.push(element);
+                        }
+                    });
+                    user.mailList=mails;
+                    user.save();
+                    io.to(userlist[contact]).emit('update_mails', mails);
+                }
+            }
+        });
+        socket.exists= false;
+        socket.alreadyhavethatcontact = false;
+    });
+    socket.on('add_contact', function(contact,cur_email){
+        // User.findOne({'username':contact}, (err,user)=>{
+        //     if (!err){
+        //         if (user){
+                    
+        //             socket.exists=true;
+        //         }
+        //     }
+        // });
+        console.log('yes');
+        User.findOne({'username':cur_email}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    user.contactList = [...user.contactList, {"email": contact}];
+                    user.save();
+                    users = user.contactList;
+                    io.to(userlist[cur_email]).emit('update_userlist',users);
+                    io.to(userlist[cur_email]).emit('chat_message', `<strong style='color:blue'>${contact} has accepted your friend request!</strong>`,socket.username);
+                }
+            }
+        });
+        User.findOne({'username':contact}, (err,user)=>{
+            if (!err) {
+                if (user) {
+                    user.contactList = [...user.contactList, {"email": cur_email}];
+                    mails=[];
+                    user.mailList.forEach(element => {
+                        if (!(element.sentto==contact && element.sentfrom==cur_email)){
+                            mails.push(element);
+                        }
+                    });
+                    user.mailList=mails;
+                    user.save();
+                    users = user.contactList;
+                    io.to(userlist[contact]).emit('update_userlist',users);
+                    io.to(userlist[contact]).emit('update_mails', mails);
+                }
+            }
+        });
+        socket.exists= false;
+        socket.alreadyhavethatcontact = false;
         
     });
 });

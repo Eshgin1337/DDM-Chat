@@ -17,6 +17,7 @@
         #frm2dv2 {position: relative;top:50%; height: 5vh;}
         /* #frm3 #form3 { position:relative;top:70%; margin-right: .5%; } */
         #messages {list-style-type: none; margin: 0%; padding: 0%; }
+        #mails {list-style-type: none;}
         #messages li {padding: 4%; }
         #frm{
           margin-left: 20.5%;
@@ -100,8 +101,11 @@
     </div>
     <div id="frm3"> 
       <input onclick="showProfile()" title="Your Profile" style="position:relative;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/1077/1077012.png" />
+      <input onclick="showEmails()" title="Your Emails" style="position:relative;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/552/552486.png" />
       <input onclick="showAddContact()" title="Add Contact" style="position:relative;top:10%;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/3579/3579045.png" />
       <input onclick="showAddGroup()" title="Create a new group" style="position:relative;top:25%;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/3820/3820188.png" />
+      
+      
       <form action="/logout" method="get" style="position:absolute;bottom:10%;">
         <input title="LogOut" style="position:relative;bottom:0%;border-radius: 50%;width:100%;height:10%;background-color: aliceblue;" type="image" src="https://cdn-icons-png.flaticon.com/128/1828/1828490.png" />
         <!-- <button type="submit" style="position:absolute;top:2%;background-color:aqua">logout</button> -->
@@ -125,6 +129,8 @@
             var span = document.createElement("span");
             var addcontactform = document.createElement("form");
             var addgroupform = document.createElement("form");
+            var mails = document.createElement("ul");
+            mails.id="mails";
             addcontactform.id="form2";
             addgroupform.id="form3";
             function simulateClick(x, y) {
@@ -147,10 +153,17 @@
                 title:"User Profile",
                 content:span,
                 icon:"info",
-                
-              })
+              });
               
             };
+            function showEmails(){
+              
+                swal({
+                  title: "Emails",
+                  content:mails,
+                });
+              }
+            
             function showAddContact(){
               swal({
                 title:"Contact Add Form",
@@ -268,7 +281,18 @@
               });
               document.getElementById('groups').innerHTML = html;
             });
-
+            socket.on('update_mails', function(mailList){
+              console.log('yes',mailList);
+              // console.log(cur_email,sentfrom);
+              var mymailslist="";
+              
+              mailList.forEach(element => {
+                mymailslist+=`<li style="color:green;text-decoration:none;border:solid black 2px;" onclick="getnewmail('${element.sentfrom}')"> New friend request from ${element.sentfrom}.</li>`
+                mymailslist+=`<li></li>`;
+                // mymailslist.push()
+              });
+              mails.innerHTML=mymailslist;
+            });
             socket.on('update_userlist', (data)=>{
               var html='';
               data.forEach(element => {
@@ -302,15 +326,17 @@
                 $('#messages').append($('<li>').html(""));
               }
               else{
-                socket.emit('add_contact', $('#em').val(),cur_email);
+                socket.emit('send_friend_request', $('#em').val(),cur_email);
               }
             }
             function ongroupselect(groupname,elm){
               if (groupcht){
                 grp.style.backgroundColor = 'lightcoral';
               }
+              else if (groupcht || !privatecht){
+                elm.style.backgroundColor = 'lightblue';
+              }
               grp = elm;
-              elm.style.backgroundColor = 'lightblue';
               groupcht =true;
               privatecht=false;
               socket.emit('group_chat',groupname,cur_email);
@@ -372,6 +398,28 @@
                window.scrollBy(0,1000000000);
                num_of_msg+=1;
             });
+            
+            function getnewmail(sentfrom){
+              swal({
+                title: "Friend Request Form",
+                text: "Do you accept it or not?",
+                cancelButtonText: 'Cancel',
+                buttons: {
+                  cancel:true,
+                  add:{text: "Accept!",className:"swal-button2"},
+                  },
+                }).then(ifconfirm=>{
+                  if (ifconfirm){
+                    // console.log('yesyes');
+                    socket.emit('add_contact',cur_email,sentfrom);
+                  }
+                  else{
+                    $('#messages').append($('<li style="color:black;text-align:right;border:solid black 2px;">').html("You denied the friend request!"));
+                    socket.emit('deny_the_request',cur_email,sentfrom);
+                  }
+                });
+                
+            }
             socket.on('is_online', function(username,cur_em) {
               if (chaecker==false){
                 cur_email = cur_em;
