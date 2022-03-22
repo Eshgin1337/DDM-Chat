@@ -416,7 +416,7 @@ io.on('connection', function(socket) {
     });
 
     socket.on('addpersontogroup', function(groupname,addeduser,adder){
-        User.findOne({'username':addeduser},async function(err,user){
+        User.findOne({'username':addeduser},function(err,user){
                 if (!err){
                     if (!user){
                         socket.fff=true;
@@ -424,15 +424,17 @@ io.on('connection', function(socket) {
                     }
                     else if (user){
                         var ifincontacts = false;
-                        await user.contactList.forEach(element => {
-                            if (element.email==addeduser){
+                        user.contactList.forEach(element => {
+                            if (element.email===addeduser){
                                 ifincontacts=true;
                             }
                         });
-                        if (!ifincontacts){
-                            socket.fff=true;
-                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">You can only add people from your contactlist!</strong>',socket.username)
-                        }
+                        setTimeout(() => {
+                            if (!ifincontacts){
+                                socket.fff=true;
+                                io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">You can only add people from your contactlist!</strong>',socket.username)
+                            }
+                        }, 100); 
                     }
                 }
         });
