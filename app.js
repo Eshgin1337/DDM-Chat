@@ -416,7 +416,7 @@ io.on('connection', function(socket) {
     });
 
     socket.on('addpersontogroup', function(groupname,addeduser,adder){
-        User.findOne({'username':addeduser}, function(err,user){
+        User.findOne({'username':addeduser},async function(err,user){
                 if (!err){
                     if (!user){
                         socket.fff=true;
@@ -424,7 +424,7 @@ io.on('connection', function(socket) {
                     }
                     else if (user){
                         var ifincontacts = false;
-                        user.contactList.forEach(element => {
+                        await user.contactList.forEach(element => {
                             if (element.email==addeduser){
                                 ifincontacts=true;
                             }
