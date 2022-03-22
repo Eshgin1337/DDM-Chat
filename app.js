@@ -425,7 +425,7 @@ io.on('connection', function(socket) {
                     else if (user){
                         var ifincontacts = false;
                         user.contactList.forEach(element => {
-                            if (element.email===addeduser){
+                            if (element.email==addeduser){
                                 ifincontacts=true;
                             }
                         });
@@ -434,7 +434,7 @@ io.on('connection', function(socket) {
                                 socket.fff=true;
                                 io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">You can only add people from your contactlist!</strong>',socket.username)
                             }
-                        }, 50); 
+                        }, 90); 
                     }
                 }
         });
