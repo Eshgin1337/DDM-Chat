@@ -288,7 +288,7 @@
               
               mailList.forEach(element => {
                 mymailslist+=`<li style="color:green;text-decoration:none;border:solid black 2px;" onclick="getnewmail('${element.sentfrom}')"> New friend request from ${element.sentfrom}.</li>`
-                mymailslist+=`<li></li>`;
+                mymailslist+=`<hr>`;
                 // mymailslist.push()
               });
               mails.innerHTML=mymailslist;
@@ -411,10 +411,13 @@
                 }).then(ifconfirm=>{
                   if (ifconfirm){
                     // console.log('yesyes');
+                    $('#messages').append($('<li style="color:green;text-align:right;border:solid black 2px;">').html("You accepted the friend request!"));
+                    $('#messages').append($('<li>').html(""));
                     socket.emit('add_contact',cur_email,sentfrom);
                   }
                   else{
                     $('#messages').append($('<li style="color:black;text-align:right;border:solid black 2px;">').html("You denied the friend request!"));
+                    $('#messages').append($('<li>').html(""));
                     socket.emit('deny_the_request',cur_email,sentfrom);
                   }
                 });

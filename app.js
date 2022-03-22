@@ -33,8 +33,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
-// mongoose.connect('mongodb://localhost:27017/usersDB');
+// mongoose.connect('mongodb+srv://esqin-admin:Esqin2002@cluster0.ak7cq.mongodb.net/usersDB');
+mongoose.connect('mongodb://localhost:27017/usersDB');
 
 const userSchema = new mongoose.Schema({
     email: String,
@@ -78,10 +78,10 @@ const Messages = new mongoose.model('Messages', MessageSchema);
 const Groups = new mongoose.model('Groups',GroupSchema);
 const Onlineusers = new mongoose.model('Onlineusers', OnlineSchema);
 
-// User.collection.drop();
-// Messages.collection.drop();
-// Groups.collection.drop()
-// Onlineusers.collection.drop();
+User.collection.drop();
+Messages.collection.drop();
+Groups.collection.drop()
+Onlineusers.collection.drop();
 
 passport.use(User.createStrategy());
 
@@ -417,12 +417,24 @@ io.on('connection', function(socket) {
 
     socket.on('addpersontogroup', function(groupname,addeduser,adder){
         User.findOne({'username':addeduser}, function(err,user){
-            if (!err){
-                if (!user){
-                    socket.fff=true;
-                    io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user doesnt exist!</strong>',socket.username)
+                if (!err){
+                    if (!user){
+                        socket.fff=true;
+                        io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">That user doesnt exist!</strong>',socket.username)
+                    }
+                    else if (user){
+                        var ifincontacts = false;
+                        user.contactList.forEach(element => {
+                            if (element.email==addeduser){
+                                ifincontacts=true;
+                            }
+                        });
+                        if (!ifincontacts){
+                            socket.fff=true;
+                            io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">You can only add people from your contactlist!</strong>',socket.username)
+                        }
+                    }
                 }
-            }
         });
         setTimeout(() => {
             if (!socket.fff){
@@ -479,6 +491,7 @@ io.on('connection', function(socket) {
             }
         }, 200);
     socket.fff=false;
+
     });
 
 
@@ -656,8 +669,8 @@ app.post('/register', function (req, res) {
                         from: from,
                         to: username,
                         subject: 'EMAIL VERIFICATION',
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
-                        //    html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
+                        // html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
+                           html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
                         };
                       
                       transporter.sendMail(mailOptions, function(error, info){
