@@ -434,7 +434,7 @@ io.on('connection', function(socket) {
                                 socket.fff=true;
                                 io.to(userlist[adder]).emit('chat_message', '<strong style="color:purple">You can only add people from your contactlist!</strong>',socket.username)
                             }
-                        }, 100); 
+                        }, 50); 
                     }
                 }
         });
