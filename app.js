@@ -403,7 +403,7 @@ io.on('connection', function(socket) {
                             group.groupMessages = [...group.groupMessages, {"sender":cur_usr,"message":message,"sentDate":Date.now().toString(),"sentHour":(Number(t_.getHours())+4).toString(),"sentMinute":t_.getMinutes(),"sentMonth":t_.getMonth()}];
                             group.groupMembers.forEach(element => {
                                 
-                                if (grpmsglist[element.email]===grpmsglist[cur_usr]){
+                                if (grpmsglist[element.email]==grpmsglist[cur_usr]){
                                     io.to(userlist[element.email]).emit('chat_message', '<strong>' + socket.username + '</strong>: ' + message,socket.username,t_.getMinutes(),(Number(t_.getHours())+4).toString(),months[Number(t_.getMonth())]);
                                 }
                             });

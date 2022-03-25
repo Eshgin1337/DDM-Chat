@@ -329,22 +329,61 @@
                 socket.emit('send_friend_request', $('#em').val(),cur_email);
               }
             }
-            function ongroupselect(groupname,elm){
-              if (groupcht){
-                grp.style.backgroundColor = 'lightcoral';
-              }
-              grp = elm;
+            function ongroupselect(groupname,elm){    
+              
+              $("#users li").each((idx,li)=>{
+                li.style.backgroundColor = 'greenyellow';
+                $(li).hover(()=>{
+                  $(li).css('background-color', 'bisque');
+                },()=>{
+                  $(li).css('background-color', 'greenyellow');
+                });
+              });
+              $("#groups li").each((idx,li)=>{
+                if (li!=elm){
+                  li.style.backgroundColor = 'lightcoral';
+                  $(li).hover(()=>{
+                    $(li).css('background-color', 'lightblue');
+                  },()=>{
+                    $(li).css('background-color', 'lightcoral');
+                  });
+                }
+              });
               elm.style.backgroundColor = 'lightblue';
+              $(elm).hover(()=>{
+                    $(elm).css('background-color', 'lightblue');
+                  },()=>{
+                    $(elm).css('background-color', 'lightblue');
+              });
               groupcht =true;
               privatecht=false;
               socket.emit('group_chat',groupname,cur_email);
             }
             function onuserselect(username,elm){
-              if (privatecht){
-                prv.style.backgroundColor = 'greenyellow';
-              }
-              prv = elm;
-              elm.style.backgroundColor = 'bisque';
+              $("#groups li").each((idx,li)=>{
+                li.style.backgroundColor = 'lightcoral';
+                  $(li).hover(()=>{
+                    $(li).css('background-color', 'lightblue');
+                  },()=>{
+                    $(li).css('background-color', 'lightcoral');
+                  });
+              });
+              $("#users li").each((idx,li)=>{
+                if (li!=elm){
+                  li.style.backgroundColor = 'greenyellow';
+                  $(li).hover(()=>{
+                    $(li).css('background-color', 'bisque');
+                  },()=>{
+                    $(li).css('background-color', 'greenyellow');
+                  });
+                }
+              });
+              elm.style.backgroundColor='bisque';
+              $(elm).hover(()=>{
+                $(elm).css('background-color', 'bisque');
+              },()=>{
+                $(elm).css('background-color', 'bisque');
+              });
               privatecht =true;
               groupcht=false;
               socket.emit('private_chat',username,cur_email,cur_usr);
