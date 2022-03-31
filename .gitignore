@@ -1,3 +1,4 @@
 /node_modules
+/ddm-chat
 npm-debug.log
 .DS_Store

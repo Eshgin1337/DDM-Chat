@@ -169,9 +169,6 @@ app.get('/logout', function (req, res) {
     current_user_email = "";
     res.redirect('/login');
 })
-app.get('/verify',function(req,res){
-    res.render('verify');
-})
 app.get('/verification/:username/:password', function(req,res){
     User.register({username: req.params.username }, req.params.password, function (err, user) {
         if (err) throw err;
@@ -689,7 +686,7 @@ app.post('/register', function (req, res) {
                           console.log('Email sent: ' + info.response);
                         }
                       });
-                      res.render('verify');
+                      res.render('register', {err_message:"Confirm"});
                 }
             }
         });

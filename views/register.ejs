@@ -1,14 +1,25 @@
 <%- include('partials/header') %>
+
+
 <nav id="nv">
   <a href="/"><strong>Home</strong></a>
   
   <a href="/about"><strong>About</strong></a>
   <a href="/login"><strong>Login</strong></a>
 </nav>
-<% if(err_message !=""){ %>
+<% if(err_message !="" && err_message!="Confirm"){ %>
   <div class="alert alert-danger">
     <strong><%- err_message %></strong> 
   </div>
+<% } %>
+<% if (err_message=="Confirm"){ %>
+  <script>
+    swal({
+      title: "Confirmation message was sent",
+      text:"Check your email",
+      icon: "success"
+    });
+  </script>  
 <% } %>
 <div class="container mt-5">
   <h1>Register</h1>
