@@ -273,9 +273,9 @@ io.on('connection', function(socket) {
     });
     socket.on('disconnect', function(username) {
         // console.log('yesdisconnected',current_user_email);
-        userlist[current_user_email]=false;
+        userlist[socket.email]=false;
         setTimeout(() => {
-            User.findOne({'username':current_user_email},(err,user)=>{
+            User.findOne({'username':socket.email},(err,user)=>{
                 if (!err){
                     if (user){
                         user.status = false;
@@ -285,7 +285,7 @@ io.on('connection', function(socket) {
             });
         }, 100); 
         setTimeout(() => {
-            Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
+            Onlineusers.deleteOne({ 'userName': socket.email }, function (err) {
                 if (err) return handleError(err);
               });
         }, 200); 
