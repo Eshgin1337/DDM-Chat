@@ -10,6 +10,7 @@ const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
 const alert = require('alert');
+const jwt = require('jsonwebtoken');
 // passport-local
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
@@ -140,19 +141,26 @@ app.get('/submit', function (req, res) {
 });
 
 app.get('/chatting_page', function (req, res) {
-    var usrnme="";
-    for (var i=0;i<current_user.length;i++){
-        if (current_user[i]=="@"){
-            current_user=usrnme;
-            break;
+    if (req.session.isAuth) {
+        var usrnme="";
+        for (var i=0;i<current_user.length;i++){
+            if (current_user[i]=="@"){
+                current_user=usrnme;
+                break;
+            }
+            usrnme+=current_user[i];
         }
-        usrnme+=current_user[i];
+        res.render('index.ejs', {username: current_user});
+    } else {
+        res.redirect('/login');
     }
-    res.render('index.ejs', {username: current_user});
 });
+
+
 var userlist = [];
 app.get('/logout', function (req, res) {
     req.logout();
+    req.session.isAuth = false;
     userlist[current_user_email]=false;
     User.findOne({'username':current_user_email},(err,user)=>{
         if (!err){
@@ -169,11 +177,22 @@ app.get('/logout', function (req, res) {
     current_user_email = "";
     res.redirect('/login');
 })
-app.get('/verification/:username/:password', function(req,res){
-    User.register({username: req.params.username }, req.params.password, function (err, user) {
-        if (err) throw err;
+app.get('/verification/:userData', function(req,res){
+    jwt.verify(req.params.userData, process.env.JWT_SECRET, function (err, userData) {
+        if (err)  {
+            res.redirect('/');
+        };
+        if (userData) {
+            User.register({username: userData.username }, userData.password, function (err, user) {
+                if (err) throw err;
+            });
+            res.redirect('/login');
+        } else {
+            res.redirect('/');
+        }
+        
     });
-    res.redirect('/login');
+    
 });
 
 var users = [];
@@ -650,7 +669,7 @@ io.on('connection', function(socket) {
 app.post('/register', function (req, res) {
     const username = req.body.username;
     const password = req.body.password;
-    
+    const userData = jwt.sign({username: username, password: password}, process.env.JWT_SECRET, {expiresIn: 180});
     if(password.length<8){
         res.render('register', {err_message:"Password cannot be less than 8 characters!"});
     }
@@ -675,8 +694,8 @@ app.post('/register', function (req, res) {
                         to: username,
                         subject: 'EMAIL VERIFICATION',
                         
-                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${username}/${password}">Chatting Page</a>`,
-                        //    html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${username}/${password}">Chatting Page</a>`,
+                        html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://ddm-chat.herokuapp.com/verification/${userData}/">Chatting Page</a>`,
+                        //    html: `<h1>Conguratulations!</h1><br><h2>You successfully passed the authorization. Follow the link below to finish the authorization and enter the main page.<br> <a href="http://localhost:3000/verification/${userData}/">Chatting Page</a>`,
                         };
                       
                       transporter.sendMail(mailOptions, function(error, info){
@@ -721,6 +740,7 @@ app.post('/login', function (req, res) {
                                     res.render('login',{err_message:"This user is already logged in!"});
                             }
                             else{
+                                req.session.isAuth = true;
                                 res.redirect('/chatting_page');
                             }
                         }
