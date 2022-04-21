@@ -161,7 +161,7 @@ var userlist = [];
 app.post('/logout', function (req, res) {
     req.logout();
     req.session.isAuth = false;
-    userlist[current_user_email]=false;
+    userlist[req.body.username]=false;
     User.findOne({'username':req.body.username},(err,user)=>{
         if (!err){
             if (user){
