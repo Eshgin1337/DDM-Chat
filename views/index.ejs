@@ -464,7 +464,8 @@
               if (chaecker==false){
                 cur_email = cur_em;
                 cur_usr = username;
-                span.innerHTML = `<strong>email:</strong>${cur_email}\n<strong>username:</strong>${cur_usr}`;
+                span.innerHTML = `<strong>email:</strong>${cur_email}<br><strong>username:</strong>${cur_usr}<br><br><br>
+                                  <a href="/reset/${cur_email}">Reset the password</a>`;
                 chaecker=true;
               }
             });

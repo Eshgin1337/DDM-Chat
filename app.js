@@ -180,19 +180,26 @@ app.get('/logout', function (req, res) {
 app.get('/verification/:userData', function(req,res){
     jwt.verify(req.params.userData, process.env.JWT_SECRET, function (err, userData) {
         if (err)  {
-            res.redirect('expired');
+            res.send('expired');
         };
         if (userData) {
             User.register({username: userData.username }, userData.password, function (err, user) {
                 if (err) throw err;
             });
             res.redirect('/login');
-        } else {
-            res.send("expired");
-        }
+        } 
         
     });
     
+});
+
+app.get('/reset/:email', (req,res)=>{
+    if (req.session.isAuth){
+        res.render('reset', {err_message: "",email:req.params.email});
+    }
+    else {
+        res.send("dont try to spoof me!");
+    }
 });
 
 var users = [];
@@ -666,12 +673,45 @@ io.on('connection', function(socket) {
     });
 });
 
+app.post('/reset', function(req,res){
+    const newpassword = req.body.newpassword;
+    const confirmnewpassword = req.body.confirmnewpassword;
+    
+    if(newpassword.length<8){
+        res.render('reset', {err_message:"NewPassword cannot be less than 8 characters!"});
+    }
+    else if (newpassword!=confirmnewpassword){
+        res.render('reset', {err_message:"NewPassword and confirm Newpassword doesnt match!"});
+    }
+    else{
+        req.logout();
+        req.session.isAuth = false;
+        userlist[current_user_email]=false;
+        User.deleteOne({'username':req.body.email}, function (err) {
+            if (err) return handleError(err);
+        });
+        Onlineusers.deleteOne({ 'userName': req.body.email }, function (err) {
+            if (err) return handleError(err);
+        });
+        current_user = "";
+        current_user_email = "";
+        User.register({username: req.body.email }, newpassword, function (err, user) {
+            if (err) throw err;
+        });
+        res.render('login', {err_message:"" ,successfulreset:true});
+    }
+});
+
 app.post('/register', function (req, res) {
     const username = req.body.username;
     const password = req.body.password;
+    const confirmpassword = req.body.confirmpassword;
     const userData = jwt.sign({username: username, password: password}, process.env.JWT_SECRET, {expiresIn: 180});
     if(password.length<8){
         res.render('register', {err_message:"Password cannot be less than 8 characters!"});
+    }
+    else if (password!=confirmpassword){
+        res.render('register', {err_message:"Password and confirm password doesnt match!"});
     }
     else{
         User.findOne({'username':username}, (err,user)=>{

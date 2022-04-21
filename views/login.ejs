@@ -10,6 +10,11 @@
     <strong><%- err_message %></strong> 
   </div>
 <% } %>
+<% if(locals.successfulreset){ %>
+  <div class="alert alert-success">
+    <strong>Your password was changed successfully</strong> 
+  </div>
+<% } %>
 <div class="container mt-5">
   <h1>Login</h1>
 
