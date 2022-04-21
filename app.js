@@ -158,11 +158,11 @@ app.get('/chatting_page', function (req, res) {
 
 
 var userlist = [];
-app.get('/logout', function (req, res) {
+app.post('/logout', function (req, res) {
     req.logout();
     req.session.isAuth = false;
     userlist[current_user_email]=false;
-    User.findOne({'username':current_user_email},(err,user)=>{
+    User.findOne({'username':req.body.username},(err,user)=>{
         if (!err){
             if (user){
                 user.status = false;
@@ -170,11 +170,9 @@ app.get('/logout', function (req, res) {
             }
         }
     });
-    Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
+    Onlineusers.deleteOne({ 'userName': req.body.username }, function (err) {
         if (err) return handleError(err);
     });
-    current_user = "";
-    current_user_email = "";
     res.redirect('/login');
 })
 app.get('/verification/:userData', function(req,res){
