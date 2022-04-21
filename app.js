@@ -684,7 +684,7 @@ app.post('/reset', function(req,res){
     else{
         req.logout();
         req.session.isAuth = false;
-        userlist[current_user_email]=false;
+        userlist[req.body.email]=false;
         var newemail = "";
         var newpasswd = "";
         var newstatus=false;
