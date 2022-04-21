@@ -465,7 +465,7 @@
                 cur_email = cur_em;
                 cur_usr = username;
                 span.innerHTML = `<strong>email:</strong>${cur_email}<br><strong>username:</strong>${cur_usr}<br><br><br>
-                                  <a href="/reset/${cur_email}">Reset the password</a>`;
+                                  <form action='/resetmypassword' method='post'><input type='hidden' name='username' value=${cur_email}><button class='btn btn-success' type='submit'>Reset the password</button></form>`;
                 chaecker=true;
               }
             });

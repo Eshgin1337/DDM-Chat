@@ -193,9 +193,9 @@ app.get('/verification/:userData', function(req,res){
     
 });
 
-app.get('/reset/:email', (req,res)=>{
+app.post('/resetmypassword', (req,res)=>{
     if (req.session.isAuth){
-        res.render('reset', {err_message: "",email:req.params.email});
+        res.render('reset', {err_message: "",email:req.body.username});
     }
     else {
         res.send("dont try to spoof me!");
@@ -687,18 +687,62 @@ app.post('/reset', function(req,res){
         req.logout();
         req.session.isAuth = false;
         userlist[current_user_email]=false;
-        User.deleteOne({'username':req.body.email}, function (err) {
-            if (err) return handleError(err);
+        var newemail = "";
+        var newpasswd = "";
+        var newstatus=false;
+        var newgoogleId = "";
+        var newmailList = [];
+        var newcontactList = [];
+        var newblockedContacts = [];
+        var newgroups = [];
+        User.findOne({'username':req.body.email}, function(err,data){
+            if (!err){
+                if (data){
+                    newemail = data.username;
+                    newcontactList = data.contactList;
+                    newblockedContacts = data.blokcedContacts;
+                    newmailList = data.newmailList;
+                    newgroups = data.groups;
+                    User.deleteOne({'username':req.body.email}, function (err) {
+                        if (err) return handleError(err);
+                    });
+                    
+                    current_user = "";
+                    current_user_email = "";
+                    User.register({username: req.body.email }, newpassword, function (err, user) {
+                        if (err) throw err;
+                    });
+                    setTimeout(() => {
+                        Onlineusers.deleteOne({ 'userName': req.body.email }, function (err) {
+                            if (err) return handleError(err);
+                        });
+                        User.find({}, (err,docs)=>{
+                            if (!err){
+                                if (docs){
+                                    console.log(docs);
+                                }
+                            }
+                        })
+                        User.findOne({'username':req.body.email}, function(err,data){
+                            if (!err){
+                                if (data){
+                                    
+                                    data.contactList=newcontactList;
+                                    data.blokcedContacts=newblockedContacts;
+                                    data.newmailList=newmailList;
+                                    data.groups=newgroups;
+                                    console.log(data);
+                                    data.save();
+                                }
+                            }
+                        });
+                        res.render('login', {err_message:"" ,successfulreset:true});
+                    }, 500);
+                    
+                }
+            }
         });
-        Onlineusers.deleteOne({ 'userName': req.body.email }, function (err) {
-            if (err) return handleError(err);
-        });
-        current_user = "";
-        current_user_email = "";
-        User.register({username: req.body.email }, newpassword, function (err, user) {
-            if (err) throw err;
-        });
-        res.render('login', {err_message:"" ,successfulreset:true});
+        
     }
 });
 
