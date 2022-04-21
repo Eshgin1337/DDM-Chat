@@ -180,7 +180,7 @@ app.get('/logout', function (req, res) {
 app.get('/verification/:userData', function(req,res){
     jwt.verify(req.params.userData, process.env.JWT_SECRET, function (err, userData) {
         if (err)  {
-            res.redirect('/');
+            res.redirect('expired');
         };
         if (userData) {
             User.register({username: userData.username }, userData.password, function (err, user) {
@@ -188,7 +188,7 @@ app.get('/verification/:userData', function(req,res){
             });
             res.redirect('/login');
         } else {
-            res.redirect('/');
+            res.send("expired");
         }
         
     });
