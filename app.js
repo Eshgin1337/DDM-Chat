@@ -669,7 +669,10 @@ app.post('/register', function (req, res) {
     const password = req.body.password;
     const confirmpassword = req.body.confirmpassword;
     const userData = jwt.sign({username: username, password: password}, process.env.JWT_SECRET, {expiresIn: 180});
-    if(password.length<8){
+    if (password=="" || username=="" || confirmpassword==""){
+        res.render('register', {err_message:"Please fill all fields!"});
+    }
+    else if(password.length<8){
         res.render('register', {err_message:"Password cannot be less than 8 characters!"});
     }
     else if (password!=confirmpassword){
