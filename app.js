@@ -180,13 +180,15 @@ app.get('/logout', function (req, res) {
 app.get('/verification/:userData', function(req,res){
     jwt.verify(req.params.userData, process.env.JWT_SECRET, function (err, userData) {
         if (err)  {
-            res.send('expired!');
+            res.send('expired');
         };
         if (userData) {
             User.register({username: userData.username }, userData.password, function (err, user) {
                 if (err) throw err;
             });
-            res.rendirect('/login');
+            res.redirect('/login');
+        } else {
+            res.send('expired');
         }
         
     });
@@ -669,14 +671,14 @@ app.post('/register', function (req, res) {
     const password = req.body.password;
     const confirmpassword = req.body.confirmpassword;
     const userData = jwt.sign({username: username, password: password}, process.env.JWT_SECRET, {expiresIn: 180});
-    if (password=="" || username=="" || confirmpassword==""){
-        res.render('register', {err_message:"Please fill all fields!"});
+    if (username=="" || password=="" || confirmpassword==""){
+        res.render('register', {err_message:"Please fill al fields!"});
     }
     else if(password.length<8){
         res.render('register', {err_message:"Password cannot be less than 8 characters!"});
     }
     else if (password!=confirmpassword){
-        res.render('register', {err_message:"Password and Confirmpassword doesn't match!"});
+        res.render('register', {err_message:"Password and confirmpassword doesnt match!"});
     }
     else{
         User.findOne({'username':username}, (err,user)=>{
