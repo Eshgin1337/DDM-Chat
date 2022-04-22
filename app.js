@@ -158,11 +158,11 @@ app.get('/chatting_page', function (req, res) {
 
 
 var userlist = [];
-app.post('/logout', function (req, res) {
+app.get('/logout', function (req, res) {
     req.logout();
     req.session.isAuth = false;
-    userlist[req.body.username]=false;
-    User.findOne({'username':req.body.username},(err,user)=>{
+    userlist[current_user_email]=false;
+    User.findOne({'username':current_user_email},(err,user)=>{
         if (!err){
             if (user){
                 user.status = false;
@@ -170,34 +170,27 @@ app.post('/logout', function (req, res) {
             }
         }
     });
-    Onlineusers.deleteOne({ 'userName': req.body.username }, function (err) {
+    Onlineusers.deleteOne({ 'userName': current_user_email }, function (err) {
         if (err) return handleError(err);
     });
+    current_user = "";
+    current_user_email = "";
     res.redirect('/login');
 })
 app.get('/verification/:userData', function(req,res){
     jwt.verify(req.params.userData, process.env.JWT_SECRET, function (err, userData) {
         if (err)  {
-            res.send('expired');
+            res.send('expired!');
         };
         if (userData) {
             User.register({username: userData.username }, userData.password, function (err, user) {
                 if (err) throw err;
             });
-            res.redirect('/login');
-        } 
+            res.render('login', {err_message:"",success_message:true});
+        }
         
     });
     
-});
-
-app.post('/resetmypassword', (req,res)=>{
-    if (req.session.isAuth){
-        res.render('reset', {err_message: "",email:req.body.username});
-    }
-    else {
-        res.send("dont try to spoof me!");
-    }
 });
 
 var users = [];
@@ -671,79 +664,6 @@ io.on('connection', function(socket) {
     });
 });
 
-app.post('/reset', function(req,res){
-    const newpassword = req.body.newpassword;
-    const confirmnewpassword = req.body.confirmnewpassword;
-    
-    if(newpassword.length<8){
-        res.render('reset', {err_message:"NewPassword cannot be less than 8 characters!"});
-    }
-    else if (newpassword!=confirmnewpassword){
-        res.render('reset', {err_message:"NewPassword and confirm Newpassword doesnt match!"});
-    }
-    else{
-        req.logout();
-        req.session.isAuth = false;
-        userlist[req.body.email]=false;
-        var newemail = "";
-        var newpasswd = "";
-        var newstatus=false;
-        var newgoogleId = "";
-        var newmailList = [];
-        var newcontactList = [];
-        var newblockedContacts = [];
-        var newgroups = [];
-        User.findOne({'username':req.body.email}, function(err,data){
-            if (!err){
-                if (data){
-                    newemail = data.username;
-                    newcontactList = data.contactList;
-                    newblockedContacts = data.blokcedContacts;
-                    newmailList = data.newmailList;
-                    newgroups = data.groups;
-                    User.deleteOne({'username':req.body.email}, function (err) {
-                        if (err) return handleError(err);
-                    });
-                    
-                    current_user = "";
-                    current_user_email = "";
-                    User.register({username: req.body.email }, newpassword, function (err, user) {
-                        if (err) throw err;
-                    });
-                    setTimeout(() => {
-                        Onlineusers.deleteOne({ 'userName': req.body.email }, function (err) {
-                            if (err) return handleError(err);
-                        });
-                        User.find({}, (err,docs)=>{
-                            if (!err){
-                                if (docs){
-                                    console.log(docs);
-                                }
-                            }
-                        })
-                        User.findOne({'username':req.body.email}, function(err,data){
-                            if (!err){
-                                if (data){
-                                    
-                                    data.contactList=newcontactList;
-                                    data.blokcedContacts=newblockedContacts;
-                                    data.newmailList=newmailList;
-                                    data.groups=newgroups;
-                                    console.log(data);
-                                    data.save();
-                                }
-                            }
-                        });
-                        res.render('login', {err_message:"" ,successfulreset:true});
-                    }, 500);
-                    
-                }
-            }
-        });
-        
-    }
-});
-
 app.post('/register', function (req, res) {
     const username = req.body.username;
     const password = req.body.password;
@@ -753,7 +673,7 @@ app.post('/register', function (req, res) {
         res.render('register', {err_message:"Password cannot be less than 8 characters!"});
     }
     else if (password!=confirmpassword){
-        res.render('register', {err_message:"Password and confirm password doesnt match!"});
+        res.render('register', {err_message:"Password and Confirmpassword doesn't match!"});
     }
     else{
         User.findOne({'username':username}, (err,user)=>{
