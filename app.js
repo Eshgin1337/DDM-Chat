@@ -186,7 +186,7 @@ app.get('/verification/:userData', function(req,res){
             User.register({username: userData.username }, userData.password, function (err, user) {
                 if (err) throw err;
             });
-            res.render('login', {err_message:"",success_message:true});
+            res.rendirect('/login');
         }
         
     });
