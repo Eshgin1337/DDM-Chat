@@ -11,6 +11,7 @@ To enhance the security of our platform, we have implemented multi-factor authen
         <ul> 
             <li>Prerequisites</li>
             <li>Installation</li>
+            <li>Usage</li>
         </ul>
 </ul>
 
@@ -43,3 +44,6 @@ Create a `.env` file in the project root and configure the following variables
 ```bash
     node app.js
 ```
+
+## Usage
+In order to start messaging, one need to have an account that he or she needs to log in. Then, after adding the correct credentials, there will open a page for chatting.
