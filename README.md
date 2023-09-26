@@ -11,7 +11,6 @@ To enhance the security of our platform, we have implemented multi-factor authen
         <ul> 
             <li>Prerequisites</li>
             <li>Installation</li>
-            <li>Usage</li>
         </ul>
     <li>Usage</li>
 </ul>
