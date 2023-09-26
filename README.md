@@ -13,6 +13,7 @@ To enhance the security of our platform, we have implemented multi-factor authen
             <li>Installation</li>
             <li>Usage</li>
         </ul>
+    <li>Usage</li>
 </ul>
 
 # Getting Started
@@ -46,4 +47,12 @@ Create a `.env` file in the project root and configure the following variables
 ```
 
 ## Usage
-In order to start messaging, one need to have an account that he or she needs to log in. Then, after adding the correct credentials, there will open a page for chatting.
+To begin messaging, you must first log in to your account. If you don't have an account, you can create one using your email and password. After entering your email and password, a confirmation email will be sent to the provided email address. Until confirmation, users will not be considered registered.
+
+Once logged in, you can access the chat interface to start messaging with other users. Enjoy the secure and versatile messaging experience our application offers!
+
+
+
+
+
+
